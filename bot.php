@@ -246,6 +246,21 @@ foreach ($Users->user_arrey as $key => $user) {
 
 
     end:
+    //Отправка контрольной SMS
+    $getdate = getdate();
+    // Functions::show($getdate, '');
+    if (in_array($getdate['hours'], [18]) && $getdate['minutes'] == 0 && $getdate['seconds'] < 15) {
+        require "./~core/model/apisms_c.php";
+        $sms .= 'Open '.count($orderOPEN). ' Balance '.round(array_sum(array_column($accountBalance, 'total_USD')),2);
+        $ApiSMS = new APISMS('843e5bec02b4c36e0202d4a0cf227eaa', 'd9c9f37cc5b86d4368da4cd7b3781a27', 'http://atompark.com/api/sms/', false);
+        $log = $ApiSMS->execCommad('sendSMS', array(
+                                         'sender' => 'xt.ua',
+                                         'text' => $sms,
+                                         'phone' => '380505953494',
+                                         'datetime' => null,
+                                         'sms_lifetime' => 0));
+    }
+
     //***** Смотрим даные если запустили с браузера
     if ($_GET['action'] == 'show'){
         echo '<div style="text-align: right; background: #fc0;">', '  <font size="20" color=blue face="Arial">', date("H:i:s", time()), '</font></div>';
@@ -253,9 +268,10 @@ foreach ($Users->user_arrey as $key => $user) {
         Functions::showArrayTable($accountBalance, '');
         Functions::showArrayTable($user[$exchange]['strategies'], "СТРАТЕГИИ ");
         Functions::showArrayTable($orderOPEN, 'OPEN order');
-    }
-}
+        //Время выполнения скрипта:
         echo 'Время выполнения скрипта: ', round(microtime(true) - $start, 4), ' сек.<br/>';
         echo 'Обем памяти: ', (memory_get_usage() - $mem_start)/1000000, ' мегабайта.<br/><br/><br/><br/>';
+    }
+}
 
 ?>
