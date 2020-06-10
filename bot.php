@@ -12,7 +12,7 @@ $minimum_time_BUY = 30;
 
 $free_SELL_OCO = array('Price' => 1.005, 'S_Price' => 0.9951, 'SL_Price' => 0.995);
 
-// базовое OCO
+//базовое OCO
 $distance_END_SELL_OCO = -0.1;
 $END_SELL_OCO = array('Price' => 1.003, 'S_Price' => 0.9991, 'SL_Price' => 0.999);
 
@@ -47,7 +47,7 @@ foreach ($Users->user_arrey as $key => $user) {
             //если нужно переставляем ордера ПРОДАЖИ
             if (1 == bccomp($order['level_price'], $distance_END_SELL_OCO, 5) && $order['type'] == 'LIMIT_MAKER' && $order['side'] == 'SELL') {
                 $clientOrderId = explode('_', $order['clientOrderId']);
-                $clientOrderId[1] ++;
+                $clientOrderId[2] ++;
                 $ParamsDELETE = array('symbol'=>$order['symbol'],
                                         'orderId'=>$order['orderId']);
                 if ($orderDELETE = $Bin->orderDELETE($ParamsDELETE)){
@@ -59,9 +59,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                                     'stopPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $END_SELL_OCO['S_Price'], 8), $minPrice),
                                                     'stopLimitPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $END_SELL_OCO['SL_Price'], 8), $minPrice),
                                                     'stopLimitTimeInForce' => 'GTC',
-                                                    'listClientOrderId'  => $clientOrderId[0].'_'.$clientOrderId[1].uniqid('_'),
-                                                    'limitClientOrderId'  => $clientOrderId[0].'_'.$clientOrderId[1].uniqid('_'),
-                                                    'stopClientOrderId'  => $clientOrderId[0].'_'.$clientOrderId[1].uniqid('_'));
+                                                    'listClientOrderId'  => $clientOrderId[0].uniqid('_').'_'.$clientOrderId[2],
+                                                    'limitClientOrderId'  => $clientOrderId[0].uniqid('_').'_'.$clientOrderId[2],
+                                                    'stopClientOrderId'  => $clientOrderId[0].uniqid('_').'_'.$clientOrderId[2]);
                     if ($orderOCO = $Bin->newOCO($Params_END_SELL_OCO)) {
                         //LOG
                     }
@@ -106,11 +106,11 @@ foreach ($Users->user_arrey as $key => $user) {
         if (bcmul($balancequantitySELL, $tickerPrice['price'], 8)<10) continue;
 
         //Получить все заказы
-        $allOrders= $Bin->allOrders(array('symbol' => $balans['asset'].'USDT', 'limit' =>'10'));
+        $allOrders= $Bin->allOrders(array('symbol' => $balans['asset'].'USDT', 'limit' =>'100'));
         //Выбераем закупки
-        $ordersBUY = array_values($Bin->multiSearch($allOrders, array( 'status' => 'EXPIRED','status' => 'FILLED', 'side' => 'BUY')));
+        if (count($allOrders)>0) $ordersBUY = Functions::multiSearch($allOrders, array( 'status' => 'EXPIRED','status' => 'FILLED', 'side' => 'BUY'));
         //Запоминаем последний ордер
-        $clientOrderId = explode('_', max($ordersBUY));
+        if (count($ordersBUY)>0) $clientOrderId = explode('_', max($ordersBUY)['clientOrderId']);
 
         $minQty = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'LOT_SIZE'))['0']['minQty'];
         $minPrice = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'PRICE_FILTER'))['0']['minPrice'];
@@ -121,9 +121,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                   'stopPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $free_SELL_OCO['S_Price'], 8), $minPrice),
                                   'stopLimitPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $free_SELL_OCO['SL_Price'], 8), $minPrice),
                                   'stopLimitTimeInForce' => 'GTC',
-                                  'listClientOrderId'  => $clientOrderId[0].uniqid('_100_'),
-                                  'limitClientOrderId'  => $clientOrderId[0].uniqid('_100_'),
-                                  'stopClientOrderId'  => $clientOrderId[0].uniqid('_100_'));
+                                  'listClientOrderId'  => $clientOrderId[0].uniqid('_').'_F-0',
+                                  'limitClientOrderId'  => $clientOrderId[0].uniqid('_').'_F-0',
+                                  'stopClientOrderId'  => $clientOrderId[0].uniqid('_').'_F-0');
         if ($orderOCO = $Bin->newOCO($Params_SELL_OCO)) {
             //LOG
         }
@@ -225,9 +225,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                           'stopPrice' => $Bin->round_min(bcmul($priceBUY, $strateg['coefficient_stop_loss'], 8), $minPrice),
                                           'stopLimitPrice' => $Bin->round_min(bcmul($priceBUY, $strateg['coefficient_stop_loss'], 8), $minPrice),
                                           'stopLimitTimeInForce' => 'GTC',
-                                          'listClientOrderId'  => $strateg['key'].uniqid('_0_'),
-                                          'limitClientOrderId'  => $strateg['key'].uniqid('_0_'),
-                                          'stopClientOrderId'  => $strateg['key'].uniqid('_0_'));
+                                          'listClientOrderId'  => $strateg['key'].uniqid('_').'_S-0',
+                                          'limitClientOrderId'  => $strateg['key'].uniqid('_').'_S-0',
+                                          'stopClientOrderId'  => $strateg['key'].uniqid('_').'_S-0');
                     //отправляем SELL ОСО
                     if ($orderOCO = $Bin->newOCO($Params_SELL_OCO)) {
                         //LOG
@@ -248,9 +248,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                         'stopPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $BUY_OCO['S_Price'], 8), $minPrice),
                                         'stopLimitPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $BUY_OCO['SL_Price'], 8), $minPrice),
                                         'stopLimitTimeInForce' => 'GTC',
-                                        'listClientOrderId'  => $strateg['key'].uniqid('_0_'),
-                                        'limitClientOrderId'  => $strateg['key'].uniqid('_0_'),
-                                        'stopClientOrderId'  => $strateg['key'].uniqid('_0_'));
+                                        'listClientOrderId'  => $strateg['key'].uniqid('_').'_S-0',
+                                        'limitClientOrderId'  => $strateg['key'].uniqid('_').'_S-0',
+                                        'stopClientOrderId'  => $strateg['key'].uniqid('_').'_S-0');
             if ($orderOCO = $Bin->newOCO($Params_BUY_OCO)) {
                 //LOG
             }

@@ -100,6 +100,7 @@ class Indicators{
         return $result;
     }
     // ****************************Индикаторы**********************************************
+    //все индикатры klines с биржи
     public function all_indicator($symbol, $interval){
         $result = [];
         if ($interval != 'off') {
@@ -116,9 +117,23 @@ class Indicators{
             $result += $this->indicator_klines_last_down($interval, $klines);
             $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
         }
-
         $result += $this->indicator_ticker24hr($symbol);
+        return $result;
+    }
+     //Иникаторы клинов
+    public function all_klines_indicator(&$klines, $interval){
+            $result = [];
+            $klin = end($klines);
 
+            $result += $this->indicator_klin_Coefficient($interval,  $klin);
+            $result += $this->indicator_klin_Volume($interval,  $klin);
+            $result += $this->indicator_klin_Quote_asset_volume($interval,  $klin);
+            $result += $this->indicator_klin_Taker_buy_base_asset_volume($interval,  $klin);
+            $result += $this->indicator_klin_Taker_buy_quote_asset_volume($interval,  $klin);
+            $result += $this->indicator_klin_last_price($interval,  $klin);
+
+            $result += $this->indicator_klines_last_down($interval, $klines);
+            $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
         return $result;
     }
 

@@ -3,7 +3,6 @@
 $start = $_SERVER['REQUEST_TIME'];
 $mem_start = memory_get_usage();
 
-
 //Устанавливаем настройки памяти
   ini_set('memory_limit', '3072M');
   // echo "memory_limit ", ini_get('memory_limit'), "<br />";
@@ -49,12 +48,10 @@ $GLOBALS['Users'] = &$Users;
 $Indicators = new Indicators();
 $GLOBALS['Indicators'] = &$Indicators;
 
-// $klines = $GLOBALS['Bin']->klines(array('symbol'=>'BTCUSDT', 'interval' => '1m', 'limit' => 500));
 // $indicator_klin_count_down = $Indicators->indicator_klin_last_down('1m',  $klines);
 // $all_indicator = $Indicators->all_indicator('BTCUSDT', '1m');
-// Functions::show($all_indicator, "_POST");
-
 // die();
+
 // Functions::show(array_values(Functions::multiSearch($GLOBALS['ticker24hr'], array('symbol' => 'BTCUSDT'))), 'BTCUSDT ');
 
 // $api = new Binance\API($KEY, $SEC);
@@ -228,7 +225,7 @@ if ($_GET['action'] == '') {
 
 		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="11" min="11" />&nbsp;&nbsp;';
 		$result .= 'Кофициент PROFIT: <input size="0" type="number"  name="coefficient_profit" value="1.003" max="10" min="1.003" step="0.00000001"/>&nbsp;&nbsp;';
-		$result .= 'Кофициент STOP LOSS: <input size="0" type="number"  name="coefficient_stop_loss" value="0.999" step="0.00000001"/></p>';
+		$result .= 'Кофициент STOP LOSS: <input size="0" type="number"  name="coefficient_stop_loss" value="0.997" step="0.00000001"/></p>';
 
 		$result .= 'Показать анализ последних 1000 свечей при условии тренда свечи:<input type="radio" checked name="trend_end_klin" value="NO"/>NO' ;
 		         foreach (['all', 'up', 'down', 'equally'] as $key => $value) {
@@ -481,6 +478,10 @@ if ($_GET['action'] == '') {
 				$result .= '<input size="5" type="hidden" name="config[coefficient_stop_loss][count]" step="0.00000001" value="0">';
 				$result .= '</tr>';
 
+
+
+
+
 				foreach ($strateg['indicator_arrey'] as $key => $value) {
 					if ($value['operator'] == '<') {
 						$min = $analytics_arrey['all'][$value['indicator']]['min'];
@@ -508,20 +509,20 @@ if ($_GET['action'] == '') {
 				}
 		}
 
-
-
 		$result .= '</table><br/>';
+
 		$result .= '<input type="submit" name="button" value="OPTIONS">&nbsp;';
-		$result .= '<input type="submit" name="button" value="COMBINATIONS">&nbsp;';
+		$result .= '<input type="submit" name="button" value="COMBINATIONS">&nbsp;&nbsp;';
+		$result .=  'Период тестирования: start <input type="datetime-local"  name="startTime"/>&nbsp;
+	               	 end<input type="datetime-local"  name="endTime" value='.date("Y-m-d H:i:s", time()).'/>&nbsp;';
 		$result .= '<input type="submit" name="button" value="TEST COMBINATIONS">';
 		$result .= '</form>';
-
-
 		echo $result ;
 
 
 		if (strcasecmp($_POST['button'], 'options') == 0) {
 			$options_indicator = Functions::options_indicator($_POST['config']);
+
 			$example = Functions::array_map_keys(create_function('$a,$b','return $a+$b;'), $_POST['config'], $options_indicator);
 			Functions::showArrayTable($example, 'Настройки ');
 
@@ -536,8 +537,14 @@ if ($_GET['action'] == '') {
 			Functions::showArrayTable($combinations, '');
 
 		}elseif (strcasecmp($_POST['button'], 'TEST COMBINATIONS') == 0) {
+				// Functions::show($_POST);
 
-			// for ($i=0; $i < 300; $i++) {
+				$funded_klines = $Bin->funded_klines($strateg, strtotime($_POST['startTime'])*1000, strtotime($_POST['endTime'])*1000);
+				// Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
+
+
+
+			// // for ($i=0; $i < 300; $i++) {
 				$options_indicator = Functions::options_indicator($_POST['config']);
 				$example = Functions::array_map_keys(create_function('$a,$b','return $a+$b;'), $_POST['config'], $options_indicator);
 				// Functions::showArrayTable($example, 'Настройки ');
@@ -546,8 +553,8 @@ if ($_GET['action'] == '') {
 				$all = count($combinations);
 
 				//тестируем по сылке
-				// Functions::test_combination($combinations, $strateg, $klines, $Indicators);
-				Functions::showArrayTable($combinations, 'Всего '. $all. ' оставил '.count($combinations));
+				Functions::test_combination($combinations, $strateg, $funded_klines);
+				Functions::showArrayTable_key($combinations, 'Всего комбинаций  '. $all. ' ЭФЕКТИВНЫЕ комбинации '.count($combinations));
 
 				//сохраняем первую
 				// $settings_statistics = Functions::settings_statistics($combinations);
@@ -574,13 +581,11 @@ if ($_GET['action'] == '') {
 	$Bin = new binance($Users->user_arrey[$_POST['login']]['binance']['config']['KEY'], $Users->user_arrey[$_POST['login']]['binance']['config']['SEC']);
 	$strateg = $Users->user_arrey[$_POST['login']][$_POST['exchange']]['strategies'][$_POST['key']];
 	if ($allOrders = $Bin->allOrders(array('symbol'=>$strateg['symbol']))){
-
 		foreach ($allOrders as $key => $value) {
-			// if (stristr($value['clientOrderId'], $_POST['key'])===false) unset($allOrders[$key]);
-			if ($value['status'] == 'EXPIRED') unset($allOrders[$key]);
-			if ($value['status'] == 'CANCELED') unset($allOrders[$key]);
+			if (stristr($value['clientOrderId'], $_POST['key'])===false) unset($allOrders[$key]);
+			if ($value['status'] == 'EXPIRED'|| $value['status'] == 'CANCELED') unset($allOrders[$key]);
 		}
-		Functions::showArrayTable(array_reverse($allOrders), 'История стратегии '.$_POST['key'].' количество'.count($allOrders));
+		Functions::showArrayTable_key(array_reverse($allOrders), 'История стратегии '.$_POST['key'].' количество'.count($allOrders));
 	}
 	// if ($myTrades = $Bin->myTrades(array('symbol'=>$strateg['symbol']))){
 	// 	Functions::showArrayTable(array_reverse($myTrades));
