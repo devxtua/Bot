@@ -1,7 +1,7 @@
 <?php
 $start = $_SERVER['REQUEST_TIME'];
 $mem_start = memory_get_usage();
-header('refresh: 3');
+header('refresh: 1');
 //биржа
 $exchange = 'binance';
 //Определяем базове валют
@@ -46,9 +46,8 @@ foreach ($Users->user_arrey as $key => $user) {
             $order['level_price'] = bcdiv(bcsub($tickerPrice['price'], $order['price'], 8), $tickerPrice['price'], 8)*100;
             //если нужно переставляем ордера ПРОДАЖИ
             if (1 == bccomp($order['level_price'], $distance_END_SELL_OCO, 5) && $order['type'] == 'LIMIT_MAKER' && $order['side'] == 'SELL') {
-                $strateg_uniqid = explode('_', $value['clientOrderId'])[0];
-                $step = explode('_', $value['clientOrderId'])[1];
-                $step ++;
+                $clientOrderId = explode('_', $order['clientOrderId']);
+                $clientOrderId[1] ++;
                 $ParamsDELETE = array('symbol'=>$order['symbol'],
                                         'orderId'=>$order['orderId']);
                 if ($orderDELETE = $Bin->orderDELETE($ParamsDELETE)){
@@ -60,9 +59,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                                     'stopPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $END_SELL_OCO['S_Price'], 8), $minPrice),
                                                     'stopLimitPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $END_SELL_OCO['SL_Price'], 8), $minPrice),
                                                     'stopLimitTimeInForce' => 'GTC',
-                                                    'listClientOrderId'  => $strateg_uniqid.'_'.$step.uniqid('_'),
-                                                    'limitClientOrderId'  => $strateg_uniqid.'_'.$step.uniqid('_'),
-                                                    'stopClientOrderId'  => $strateg_uniqid.'_'.$step.uniqid('_'));
+                                                    'listClientOrderId'  => $clientOrderId[0].'_'.$clientOrderId[1].uniqid('_'),
+                                                    'limitClientOrderId'  => $clientOrderId[0].'_'.$clientOrderId[1].uniqid('_'),
+                                                    'stopClientOrderId'  => $clientOrderId[0].'_'.$clientOrderId[1].uniqid('_'));
                     if ($orderOCO = $Bin->newOCO($Params_END_SELL_OCO)) {
                         //LOG
                     }
@@ -105,6 +104,14 @@ foreach ($Users->user_arrey as $key => $user) {
         //На free активы ставим OCO
         $balancequantitySELL = $balans['total'] - $balans['locked'] - (float)$balans['min'];
         if (bcmul($balancequantitySELL, $tickerPrice['price'], 8)<10) continue;
+
+        //Получить все заказы
+        $allOrders= $Bin->allOrders(array('symbol' => $balans['asset'].'USDT', 'limit' =>'10'));
+        //Выбераем закупки
+        $ordersBUY = array_values($Bin->multiSearch($allOrders, array( 'status' => 'EXPIRED','status' => 'FILLED', 'side' => 'BUY')));
+        //Запоминаем последний ордер
+        $clientOrderId = explode('_', max($ordersBUY));
+
         $minQty = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'LOT_SIZE'))['0']['minQty'];
         $minPrice = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'PRICE_FILTER'))['0']['minPrice'];
         $Params_SELL_OCO = array('symbol'=>$balans['asset'].'USDT',
@@ -114,9 +121,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                   'stopPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $free_SELL_OCO['S_Price'], 8), $minPrice),
                                   'stopLimitPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $free_SELL_OCO['SL_Price'], 8), $minPrice),
                                   'stopLimitTimeInForce' => 'GTC',
-                                  'listClientOrderId'  => 'free'.uniqid('_'),
-                                  'limitClientOrderId'  => 'free'.uniqid('_'),
-                                  'stopClientOrderId'  => 'free'.uniqid('_'));
+                                  'listClientOrderId'  => $clientOrderId[0].uniqid('_100_'),
+                                  'limitClientOrderId'  => $clientOrderId[0].uniqid('_100_'),
+                                  'stopClientOrderId'  => $clientOrderId[0].uniqid('_100_'));
         if ($orderOCO = $Bin->newOCO($Params_SELL_OCO)) {
             //LOG
         }
@@ -143,8 +150,14 @@ foreach ($Users->user_arrey as $key => $user) {
     //***** проверяем наличие стратегий  (если нет пропускаем)
     if (count($user[$exchange]['strategies'])==0) goto end;
 
+    //Сортируем стратегии по symbols intervals
+    $strategies = &$user[$exchange]['strategies'];
+    $symbols  = array_column($strategies, 'symbol');
+    $intervals = array_column($strategies, 'interval');
+    array_multisort($symbols, SORT_ASC, $intervals, SORT_DESC, $strategies);
+
     //***** проверяем стратегии на покупку
-    foreach ($user[$exchange]['strategies'] as $key => &$strateg) {
+    foreach ($strategies as $key => &$strateg) {
         //Исключаем отключеные стратегии
         if ($strateg['status']=='OFF') continue;
         //Получаем информацию о symbol
@@ -167,7 +180,11 @@ foreach ($Users->user_arrey as $key => $user) {
         }
 
         //получаем индикаторы торговой пары
-        $all_indicator = $Indicators->all_indicator($strateg['symbol'], $strateg['interval']);
+        if ($last_strateg['symbol'] != $strateg['symbol'] || $last_strateg['interval'] != $strateg['interval']) {
+            $all_indicator = $Indicators->all_indicator($strateg['symbol'], $strateg['interval']);
+            $last_strateg = $strateg;
+        }
+
 
         //Получаем курс BTC USD
         $kurs = $Bin->kurs($symbolInfo['quoteAsset']);
@@ -231,9 +248,9 @@ foreach ($Users->user_arrey as $key => $user) {
                                         'stopPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $BUY_OCO['S_Price'], 8), $minPrice),
                                         'stopLimitPrice' => $Bin->round_min(bcmul($tickerPrice['price'], $BUY_OCO['SL_Price'], 8), $minPrice),
                                         'stopLimitTimeInForce' => 'GTC',
-                                        'listClientOrderId'  => $strateg['key'].uniqid('_'),
-                                        'limitClientOrderId'  => $strateg['key'].uniqid('_'),
-                                        'stopClientOrderId'  => $strateg['key'].uniqid('_'));
+                                        'listClientOrderId'  => $strateg['key'].uniqid('_0_'),
+                                        'limitClientOrderId'  => $strateg['key'].uniqid('_0_'),
+                                        'stopClientOrderId'  => $strateg['key'].uniqid('_0_'));
             if ($orderOCO = $Bin->newOCO($Params_BUY_OCO)) {
                 //LOG
             }
@@ -249,7 +266,7 @@ foreach ($Users->user_arrey as $key => $user) {
     //Отправка контрольной SMS
     $getdate = getdate();
     // Functions::show($getdate, '');
-    if (in_array($getdate['hours'], [18]) && $getdate['minutes'] == 0 && $getdate['seconds'] < 15) {
+    if (in_array($getdate['hours'], [180000]) && $getdate['minutes'] == 0 && $getdate['seconds'] < 15) {
         require "./~core/model/apisms_c.php";
         $sms .= 'Open '.count($orderOPEN). ' Balance '.round(array_sum(array_column($accountBalance, 'total_USD')),2);
         $ApiSMS = new APISMS('843e5bec02b4c36e0202d4a0cf227eaa', 'd9c9f37cc5b86d4368da4cd7b3781a27', 'http://atompark.com/api/sms/', false);
