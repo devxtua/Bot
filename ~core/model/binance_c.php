@@ -91,7 +91,7 @@ class Binance{
         // $GLOBALS['tradeFeeKom'] = &$this->tradeFeeKom;
         // $GLOBALS['exchangeInfo'] = &$this->exchangeInfo;
         // // $GLOBALS['ticker24hr'] = &$this->ticker24hr;
-        // $GLOBALS['Bin'] = &$this;
+        $GLOBALS['Bin'] = &$this;
 
     }
 
@@ -302,6 +302,35 @@ class Binance{
             }
             sleep(1);
         }
+    }
+    //проверка проверка индикаторов одной стратегии
+    public function funded_klines(&$strateg, $startTime='', $endTime=''){
+        $interval = array('1m'=> 60,'3m'=> 180,'5m'=> 300,'15m'=> 900,'30m'=> 1800,'1h'=> 3600,'2h'=> 7200,'4h'=> 14400,'6h'=> 21600,'8h'=> 28800,'12h'=>43200,'1d'=> 86400,'3d'=> 259200,'1w'=> 604800,'1M'=> 2592000);
+
+        if ($endTime == '') $endTime = time()*1000;
+        if ($startTime =='') $startTime = $endTime - $interval[$strateg['interval']]*1000000;
+        $startTime = $startTime - $interval[$strateg['interval']]*1000000;
+        $funded = [];
+        while ($startTime < $endTime) {
+            $end = $startTime + $interval[$strateg['interval']]*1000000;
+            $klines = $GLOBALS['Bin']->klines(array('symbol'=>$strateg['symbol'],
+                                                    'interval' => $strateg['interval'],
+                                                    'startTime' => $startTime,
+                                                    'endTime' => $endTime,
+                                                    'limit' => 1000));
+            if (count($funded)>1){
+               foreach ($klines as $k => $v) {
+                  $time = array_column($funded, 0);
+                  if (!in_array($v[0], $time)) {
+                    $funded[] = $v;
+                  }
+               }
+            }else{
+                $funded = $klines;
+            }
+            $startTime = $end;
+        }
+        return $funded;
     }
 
     //*********************************** ОБЩЕЕ ****************************************
