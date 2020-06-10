@@ -2,12 +2,12 @@
 
 $start = microtime(true);
 $mem_start = memory_get_usage();
-// sleep(2); 
+// sleep(2);
 //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 header('refresh: 1');
 //Устанавливаем настройки памяти
     // echo "memory_limit ", ini_get('memory_limit'), "<br />";
-    ini_set('memory_limit', '512M');   
+    ini_set('memory_limit', '512M');
     echo "memory_limit ", ini_get('memory_limit'), "<br />";
 // die();
     //Устанавливаем настройки времени
@@ -16,7 +16,7 @@ header('refresh: 1');
     echo "max_execution_time ", ini_get('max_execution_time'), "<br />";
 
     // ob_implicit_flush(1);
-     
+
     // ob_start();
     // ob_get_contents();
     // ob_get_clean();
@@ -43,11 +43,11 @@ $symbolBUY =  array('ETHUSDT');
 // $symbolBUY =  array('ETHBULLUSDT','XRPBULLUSDT','EOSBULLUSDT','BULLUSDT','WINUSDT','NPXSUSDT','DENTUSDT','BTTUSDT','COCOSUSDT','HOTUSDT','MFTUSDT','ERDUSDT','KEYUSDT','MBLUSDT','ANKRUSDT','TFUELUSDT','DREPUSDT','FUNUSDT','CELRUSDT','IOTXUSDT','TROYUSDT','ONEUSDT','IOSTUSDT','VETUSDT','ZILUSDT','MITHUSDT','DOCKUSDT','FTMUSDT','GTOUSDT','TCTUSDT','COSUSDT','ARPAUSDT','CHZUSDT','TRXUSDT','VITEUSDT','NKNUSDT','BTSUSDT','MATICUSDT','RVNUSDT','FETUSDT','PERLUSDT','DUSKUSDT','ADAUSDT','XLMUSDT','CTXCUSDT','ENJUSDT','ONGUSDT','THETAUSDT','STXUSDT','AIONUSDT','IOTAUSDT','XRPUSDT','BATUSDT','WANUSDT','ZRXUSDT','NULSUSDT','BNTUSDT','MTLUSDT','ALGOUSDT','ICXUSDT','STRATUSDT','TOMOUSDT','BEAMUSDT','RLCUSDT','ONTUSDT','NANOUSDT','OMGUSDT','KAVAUSDT','HCUSDT','QTUMUSDT','XTZUSDT','EOSUSDT','ATOMUSDT','LINKUSDT','MCOUSDT','ETCUSDT','NEOUSDT','BNBUSDT','ZECUSDT','LTCUSDT','XMRUSDT','EOSBULLUSDT','DASHUSDT','XRPBULLUSDT','ETHUSDT','BCHUSDT','ETHBULLUSDT','BNBBULLUSDT','BTCUSDT','BULLUSDT');
 
 //минимальное количество сделок за 24 час
-$settings['countTrends'] = $countTrends= 500; 
+$settings['countTrends'] = $countTrends= 500;
 //минимальное обем продаж за 24 час
 $settings['quoteVolume'] = $quoteVolume = 100000;
 // максимальный % изминения цены за 24 час
-$settings['priceChangePercent'] = $priceChangePercent= array(0, 50); 
+$settings['priceChangePercent'] = $priceChangePercent= array(0, 50);
 
 
 
@@ -78,7 +78,7 @@ $base['USDT']= array('minBalans'=>1000, 'minPriceBuy'=>0.00000100);
 
 //Создаем класс
 $KEY = 'irieuC5kOGznjzpllwnxx2sDMzdLKPCS42SB8YGZ4Y8eSUz6mDtfWDMclrpUh633';
-$SEC = 'FpCQWroQgIh9KyV3Jn7A25tbbpMB93eaK2FbKFXZv7YoMCmVDn5gBoMrwHaSpPUJ'; 
+$SEC = 'FpCQWroQgIh9KyV3Jn7A25tbbpMB93eaK2FbKFXZv7YoMCmVDn5gBoMrwHaSpPUJ';
 $Bin = new binance($KEY, $SEC);
 //Проверяем торговый статус API аккаунта
 // $apiTradingStatus= $Bin->apiTradingStatus(array());
@@ -90,7 +90,7 @@ $filetradeFeeKom = 'E:\binance\tradeFeeKom.txt';
 $fileexchangeInfo = 'E:\binance\exchangeInfo.txt';
 
 if(time()-filemtime($filetradeFeeKom) > 3600 || time()-filemtime($fileexchangeInfo) > 3600){
-    //Даные в файле устарели УДАЛЯЕМ 
+    //Даные в файле устарели УДАЛЯЕМ
     unlink($filetradeFeeKom);
     unlink($fileexchangeInfo);
 
@@ -105,10 +105,10 @@ if(time()-filemtime($filetradeFeeKom) > 3600 || time()-filemtime($fileexchangeIn
     $time = microtime(true) - $start;
     echo 'Файлы ОБНОВЛЕНЫ. время: '.round($time, 4).' сек.<br/>';
     // die();
-}else{    
+}else{
     //Даные в файле актуальны читаем
     $tradeFeeKom = $Bin->readFile($filetradeFeeKom);
-    $exchangeInfo = $Bin->readFile($fileexchangeInfo);   
+    $exchangeInfo = $Bin->readFile($fileexchangeInfo);
 
     $time = microtime(true) - $start;
     // echo 'Файлы прочитаны. время: '.round($time, 4).' сек.<br/>';
@@ -155,14 +155,14 @@ $today = getdate();
 foreach ($files as $key => $name) {
     $file = $dir.$name;
     //проверяем существование файла
-    if (!is_file($file)) continue; 
-    $filemtime = filemtime($file); 
-    $filegetdate = getdate($filemtime); 
+    if (!is_file($file)) continue;
+    $filemtime = filemtime($file);
+    $filegetdate = getdate($filemtime);
     $ticker24hrfile['type'] = '';
     $ticker24hrfile['filemtime'] = $filemtime;
       // $Bin->show($filegetdate);
     // удаляем ненужные
-    if ($time - $filemtime > 60*60*24) unlink($file);             
+    if ($time - $filemtime > 60*60*24) unlink($file);
 
 
     if ($today['minutes'] == $filegetdate['minutes'] && $today['hours'] == $filegetdate['hours'] && $today['mday'] == $filegetdate['mday']) { //выбераем даные за текущую менуту
@@ -172,7 +172,7 @@ foreach ($files as $key => $name) {
           $historyTicker24hr_ALL[] = $ticker24hrfile;
 
       }
-    }elseif(($key % 2) == 0 && $time - $filemtime < 60*30) { 
+    }elseif(($key % 2) == 0 && $time - $filemtime < 60*30) {
       if ($ticker24hrfile = $Bin->readFile($file)){
           $ticker24hrfile['type'] = 'minutes';
           $historyTicker24hr_ALL[] = $ticker24hrfile;
@@ -183,19 +183,19 @@ foreach ($files as $key => $name) {
     //     if ($ticker24hrfile = $Bin->readFile($file)){
     //         $ticker24hrfile['type'] = 'hours';
     //         $historyTicker24hr_ALL[] = $ticker24hrfile;
-    //     }                 
+    //     }
     // }
     //elseif ((($key)%10000)==0 && $time - $filemtime > 60*60*24) {
     //     if ($ticker24hrfile = $Bin->readFile($file)){
     //         $ticker24hrfile['type'] = 'mday';
     //         $historyTicker24hr_ALL[] = $ticker24hrfile;
-    //     }                 
+    //     }
     // }
 
     //смотрим возраст файлов
     if ($ticker24hrfile['type'] !='') {
       echo $key, ' ', $ticker24hrfile['type'], ' ', date("H:i:s", $filemtime), ' возраст: ', date("H:i:s", mktime(0, 0, $time - $filemtime)),  "<br/>";
-    }   
+    }
 
 }
  // $Bin->show($historyTicker24hr_ALL);
@@ -207,13 +207,13 @@ echo 'Обем памяти: ', (memory_get_usage() - $mem_start)/1000000, ' м�
 $filehistoryBUY = 'E:\binance\V5historyBUY.txt';
 if (!$historyBUY  = $Bin->readFile($filehistoryBUY )){
  $historyBUY  = array();
-}else{ 
-    // foreach ($historyBUY as $key => $value) { 
+}else{
+    // foreach ($historyBUY as $key => $value) {
 
     //   if (!in_array($key, array_column($accountBalance, 'asset'))) {
     //       unset($historyBUY[$key]);
     //       continue;
-    //   } 
+    //   }
     //   if (count($value['buy'])==0) {
     //       unset($historyBUY[$key]);
     //       continue;
@@ -222,8 +222,8 @@ if (!$historyBUY  = $Bin->readFile($filehistoryBUY )){
     //       if ($value2['executedQty']==0) {
     //         unset($value['buy'][$key2]);
     //       }
-    //     }   
-    //   $historyBUY[$key]['buy'] = $value2['buy']; 
+    //     }
+    //   $historyBUY[$key]['buy'] = $value2['buy'];
     // }
 
     // $Bin->saveFile($historyBUY, $filehistoryBUY);
@@ -234,14 +234,14 @@ if (!$historyBUY  = $Bin->readFile($filehistoryBUY )){
 $filetestOrder = 'E:\binance\V5testOrder.txt';
 if ($testOrder = $Bin->readFile($filetestOrder)){
    $open = array_unique(array_column(array_values($Bin->multiSearch($testOrder, array('status' => ''))), 'asset'));
-   
+
 }else{
   $testOrder = $open = array();
 }
 
 $filesymbolConfig = 'E:\binance\symbolConfig.txt';
 if (!$symbolConfig = $Bin->readFile($filesymbolConfig)){
-  $symbolConfig = array();   
+  $symbolConfig = array();
 }
 
 // die();
@@ -251,11 +251,11 @@ if (!$symbolConfig = $Bin->readFile($filesymbolConfig)){
 //   die("МАЛО ДАНЫХ");
 // }
 
-$select = array(); 
+$select = array();
 $arrayPrice = array();
 $sConf=0;
 
-foreach ($ticker24hr as $key => $value) {//начало цикла 1 
+foreach ($ticker24hr as $key => $value) {//начало цикла 1
 
         if (in_array($value['symbol'], array_column($testOrder, 'symbol'))) {
           foreach ($testOrder as $keytestOrder => $vtestOrder) {
@@ -277,45 +277,45 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
                   $testOrder[$keytestOrder]['status'] = 'SL';
                   $testOrder[$keytestOrder]['statusTime'] = $value['closeTime'];
 
-             }             
+             }
           }
         }
 
         //Получаем информацию о symbol и исключаем неактивные пары
-        if (!$symbolInfo = array_values($Bin->multiSearch($exchangeInfo['symbols'], array('symbol' => $value['symbol'], 'status'=>'TRADING'))) ) continue;  
-            // $Bin->show($symbolInfo); 
+        if (!$symbolInfo = array_values($Bin->multiSearch($exchangeInfo['symbols'], array('symbol' => $value['symbol'], 'status'=>'TRADING'))) ) continue;
+            // $Bin->show($symbolInfo);
         //Получаем курс BTC USD
         $kurs = $Bin->kurs($symbolInfo['0']['quoteAsset'], $ticker24hr);
-           // $Bin->show($kurs); 
+           // $Bin->show($kurs);
 
 
         //исключаем все кроме разрешоного
         if (!in_array($value['symbol'], $symbolBUY))  continue;
 
-         // Исключаем если база не USDT 
+         // Исключаем если база не USDT
         // if ($symbolInfo[0]['quoteAsset']!='USDT') continue;
 
         // Исключаем пары с неутвержденой базой
         if (!array_key_exists($symbolInfo['0']['quoteAsset'], $base)) continue;
 
 
-        // //Исключаем с обемом продаж за сутки менее (24 часа) 
+        // //Исключаем с обемом продаж за сутки менее (24 часа)
         // if (($value['quoteVolume']*$kurs['kursUSD']) < $quoteVolume) continue;
 
-        // Исключаем с количеством операций меньше $countTrends (24 часа) 
+        // Исключаем с количеством операций меньше $countTrends (24 часа)
         // if ($value['count'] < $countTrends) continue;
 
-        //Исключаем с процентом изминения цены до и от (24 часа) 
-        // if (-1== bccomp((string)$value['priceChangePercent'], (string)$priceChangePercent[0], 8) || 1== bccomp((string)$value['priceChangePercent'], (string)$priceChangePercent[1], 8)) continue; 
+        //Исключаем с процентом изминения цены до и от (24 часа)
+        // if (-1== bccomp((string)$value['priceChangePercent'], (string)$priceChangePercent[0], 8) || 1== bccomp((string)$value['priceChangePercent'], (string)$priceChangePercent[1], 8)) continue;
 
         //Исключаем пары кторые не могу купить НЕТ ДЕНЕГ
         // if ($accountBalance[$symbolInfo['0']['quoteAsset']]['total_USD'] < $trade_limit) continue;
-        
+
         //Исключаем пары кторые не нужны ЕСТЬ НА БАЛАНСЕ и неявляются базой
         // if ($accountBalance[$symbolInfo['0']['baseAsset']]['total_USD'] >= $trade_limit && !array_key_exists($symbolInfo['0']['baseAsset'], $base)) continue;
 
         //Исключаем пары кторые не нужны ЕСТЬ НА БАЛАНСЕ  меньше минимума и являются базой
-        // if ($accountBalance[$symbolInfo['0']['baseAsset']]['total_USD'] <= $accountBalance[$symbolInfo['0']['baseAsset']]['minBalans'] && array_key_exists($symbolInfo['0']['baseAsset'], $base)) continue; 
+        // if ($accountBalance[$symbolInfo['0']['baseAsset']]['total_USD'] <= $accountBalance[$symbolInfo['0']['baseAsset']]['minBalans'] && array_key_exists($symbolInfo['0']['baseAsset'], $base)) continue;
 
         // Исключаем пары с ценой меньше рекомендованой более 100 сатошей
         if (-1== bccomp((string)$value['askPrice'], (string)number_format($base[$symbolInfo['0']['quoteAsset']]['minPriceBuy'], 8, '.', ''), 8)) continue;
@@ -324,23 +324,23 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
                     //находим моментальную потерю цены при покупке
                     $takerask =  bcmul($value['askPrice'], $tradeFeeKom[$value['symbol']]['taker'], 8);
                     $price_loss = bcsub($value['askPrice'], bcsub($value['bidPrice'], $takerask, 8), 8);
-                    $price_loss_p = bcmul(bcdiv($price_loss, $value['bidPrice'], 8),100, 8);         
-        // if (1== bccomp((string)$price_loss_p, (string)abs($lossМargin_p), 8))  continue; 
-        
+                    $price_loss_p = bcmul(bcdiv($price_loss, $value['bidPrice'], 8),100, 8);
+        // if (1== bccomp((string)$price_loss_p, (string)abs($lossМargin_p), 8))  continue;
+
     // $Bin->show($symbolInfo);
-    //****************************  
+    //****************************
 
       if (time() - ($symbolConfig[$value['symbol']]['Time']/1000) > 1000 && $sConf == 0) {
                 $sConf++;
 
-                if (!$klines = array_reverse($Bin->klines(array('symbol'=>$value['symbol'], 'interval' => '2h')))) 
+                if (!$klines = array_reverse($Bin->klines(array('symbol'=>$value['symbol'], 'interval' => '2h'))))
                   echo "klines NOU<br/>";
                   // $Bin->showArrayTable($klines);
                   $top = array();
                   $bottom = array();
                   $L = ceil(count($klines)*3/100);
                   $B = array('Time' => '', 'count' => 0, 'Op_Cl_p' => 0);
-                  $Bcount=array();    
+                  $Bcount=array();
 
 
                   foreach ($klines as $keyW => $valueW) {
@@ -358,8 +358,8 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
 
                       //если top
                       if (1== bccomp((string)$valueW[4], (string)$valueW[1], 8)) {
-                          $top[$keyW]['Time'] = $valueW[0]; 
-                          $top[$keyW]['Op_Cl_p'] = $Op_Cl_p; 
+                          $top[$keyW]['Time'] = $valueW[0];
+                          $top[$keyW]['Op_Cl_p'] = $Op_Cl_p;
                           $top[$keyW]['Op_Low_p'] = $Op_Low_p;
                           $top[$keyW]['Op_High_p'] = $Op_High_p;
                           $top[$keyW]['Low_High_p'] = $Low_High_p;
@@ -370,14 +370,14 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
                       }
                       //если bottom
                       if (1== bccomp((string)$valueW[1], (string)$valueW[4], 8)) {
-                          $bottom[$keyW]['Time'] = $valueW[0]; 
-                          $bottom[$keyW]['Op_Cl_p'] = $Op_Cl_p; 
-                          $bottom[$keyW]['Op_High_p'] = $Op_High_p;    
+                          $bottom[$keyW]['Time'] = $valueW[0];
+                          $bottom[$keyW]['Op_Cl_p'] = $Op_Cl_p;
+                          $bottom[$keyW]['Op_High_p'] = $Op_High_p;
                           $bottom[$keyW]['Op_Low_p'] = $Op_Low_p;
                           $bottom[$keyW]['Low_High_p'] = $Low_High_p;
-                          
-                          $B['Time'] = $valueW[0]; 
-                          $B['Op_Cl_p'] +=  abs($Op_Cl_p); 
+
+                          $B['Time'] = $valueW[0];
+                          $B['Op_Cl_p'] +=  abs($Op_Cl_p);
                           $B['count'] ++;
 
                       }
@@ -390,21 +390,21 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
                   });
                   $top = array_slice($top, 0, $L);
                   echo $value['symbol'], " top ", "<br/>";
-                  $Bin->showArrayTable($top);   
+                  $Bin->showArrayTable($top);
 
                   usort($bottom, function($a, $b) {
                       return abs($b['Op_Low_p']*100) - abs($a['Op_Low_p']*100);
                   });
                   $bottom = array_slice($bottom, 0, $L);
                   echo $value['symbol'], " bottom ", $bottom[2]['Op_Low_p'], "<br/>";
-                  $Bin->showArrayTable($bottom); 
+                  $Bin->showArrayTable($bottom);
 
                   // usort($Bcount, function($a, $b) {
                   //     return abs($b['Op_Cl_p']*100) - abs($a['Op_Cl_p']*100);
                   // });
                   // $Bcount = array_slice($Bcount, 0, $L);
                   // echo $value['symbol'],  " Bcount", "<br/>";
-                  // $Bin->showArrayTable($Bcount);   
+                  // $Bin->showArrayTable($Bcount);
 
 
 
@@ -415,8 +415,8 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
                   $symbolConfig[$value['symbol']]['trend'] = '';
 
                   $symbolConfig[$value['symbol']]['Op_Low_p'] = end($bottom)['Op_Low_p'];
-                  
-                  
+
+
                   $symbolConfig[$value['symbol']]['top_Price'] = bcadd(1, abs(end($bottom)['Op_Low_p'])/300, 3);
                   $symbolConfig[$value['symbol']]['top_S_Price'] = bcsub(1, abs(end($bottom)['Op_Low_p'])/200, 3);
                   $symbolConfig[$value['symbol']]['top_SL_Price'] = bcsub($symbolConfig[$value['symbol']]['top_S_Price'], 0.001, 3);
@@ -425,14 +425,14 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
                   // $symbolConfig[$value['symbol']]['bottom_Price'] = bcadd(1, abs(end($bottom)['Op_Low_p'])/400, 3);
                   // $symbolConfig[$value['symbol']]['bottom_S_Price'] = bcsub(1, abs(end($bottom)['Op_Low_p'])/200, 3);
                   // $symbolConfig[$value['symbol']]['bottom_SL_Price'] = bcsub($symbolConfig[$value['symbol']]['bottom_S_Price'], 0.001, 3);
-                  echo $value['symbol'], " обновлено в symbolConfig<br/>";                
+                  echo $value['symbol'], " обновлено в symbolConfig<br/>";
       }
 
 
 
         $symbol = array();
         $symbol['symbol'] = $value['symbol'];
-        $symbol['asset'] = $symbolInfo['0']['baseAsset'];  
+        $symbol['asset'] = $symbolInfo['0']['baseAsset'];
         $symbol['*']=' ';
         $symbol['time'] = $value['closeTime'];
         $symbol['priceCP'] = $value['priceChangePercent'];
@@ -441,14 +441,14 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
         $symbol['ask_last_p'] = bcmul(bcdiv($ask_last, $value['lastPrice'], 8), 100, 8);
 
 
-        $symbol['askPrice'] =$value['askPrice']; 
-        $symbol['USDaskPrice'] = bcmul($value['askPrice'], $kurs['kursUSD'], 8);       
+        $symbol['askPrice'] =$value['askPrice'];
+        $symbol['USDaskPrice'] = bcmul($value['askPrice'], $kurs['kursUSD'], 8);
         $symbol['bidPrice'] = $value['bidPrice'];
 
-        $symbol['askQty'] =$value['askQty'];       
+        $symbol['askQty'] =$value['askQty'];
         $symbol['bidQty'] = $value['bidQty'];
 
-       
+
 
         $symbol['Control'] = '';
         $symbol['status']= '';
@@ -456,49 +456,49 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
 
         $symbol['~']=' ';
 
-        
-         
+
+
         $spred = bcsub($value['askPrice'], $value['bidPrice'], 8);
         $spred_p = bcmul(bcdiv($spred, $value['bidPrice'], 8), 100, 8);
-         
+
         // $symbol['average'] = $average = bcdiv(bcadd($value['askPrice'], $value['bidPrice'], 8), 2, 8);
 
 
-        $symbol['Control_time'] = '';        
+        $symbol['Control_time'] = '';
         $symbol['Control_Price'] = '';
         $symbol['Control_p'] = '';
 
-        $symbol['Start_time'] = '';               
+        $symbol['Start_time'] = '';
         $symbol['Start_Price'] = '';
-        $symbol['Start_p'] = ''; 
+        $symbol['Start_p'] = '';
 
         $symbol['##']=' ';
-        
 
 
-     
-        
+
+
+
 
 
         $symbol['**']=' ';
         $symbol['max_date'] = $value['closeTime'];
         $symbol['max'] = $value['askPrice'];
-        $symbol['S_max_p'] = ''; 
+        $symbol['S_max_p'] = '';
         $symbol['***']=' ';
-        $symbol['min_date'] = $value['closeTime'];       
+        $symbol['min_date'] = $value['closeTime'];
         $symbol['min'] = $value['askPrice'];
         $symbol['S_min_p'] = '';
 
-        $symbol['****']=' '; 
-        $symbol['min_max_p'] = '';             
-        $symbol['trend_max_p']='';         
+        $symbol['****']=' ';
+        $symbol['min_max_p'] = '';
+        $symbol['trend_max_p']='';
         $symbol['trend_min_p']='';
 
-        $symbol['****']=' '; 
+        $symbol['****']=' ';
 
         // $symbol['stop'] = '-';
         // $symbol['stop_key']='';
-        
+
 
         $symbol['SUM_askQty'] = '';
         $symbol['SUM_bidQty'] = '';
@@ -506,7 +506,7 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
 
 
 
-        
+
 
 
 
@@ -518,8 +518,8 @@ $min24 = $value['lowPrice'];
 
 $i=0;
 
-foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {      
-      if ($value['symbol'] != $historyTicker24hr[$key]['symbol'] ) continue; 
+foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {
+      if ($value['symbol'] != $historyTicker24hr[$key]['symbol'] ) continue;
 
 
         //
@@ -533,13 +533,13 @@ foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {
           if (1 == bccomp((string)$symbol['min'], (string)$historyTicker24hr[$key]['askPrice'], 8)) {
                   $symbol['min'] = $historyTicker24hr[$key]['askPrice'];
                   $symbol['min_date'] = $historyTicker24hr[$key]['closeTime'];
-          }   
+          }
 
           //находим максимум
           if (-1 == bccomp((string)$symbol['max'], (string)$historyTicker24hr[$key]['askPrice'], 8)) {
               $symbol['max'] = $historyTicker24hr[$key]['askPrice'];
               $symbol['max_date'] = $historyTicker24hr[$key]['closeTime'];
-          } 
+          }
 
           if ($symbol['Control_Price'] == '') {
             $symbol['Control_time'] = $historyTicker24hr[$key]['closeTime'];
@@ -573,10 +573,10 @@ foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {
 
       $arrayPrice[$i]['askPrice'] = $historyTicker24hr[$key]['askPrice'];
 
-      $askPrice_sub = bcsub($historyTicker24hr[$key]['askPrice'], $arrayPrice[$n]['askPrice'], 8);      
-      $arrayPrice[$i]['askPrice_sub_p'] = bcmul(bcdiv($askPrice_sub00, $arrayPrice[$n]['askPrice'], 8), 100, 8);      
-      
-      $askPrice_sub0 = bcsub($historyTicker24hr[$key]['askPrice'],$arrayPrice[0]['askPrice'], 8);      
+      $askPrice_sub = bcsub($historyTicker24hr[$key]['askPrice'], $arrayPrice[$n]['askPrice'], 8);
+      $arrayPrice[$i]['askPrice_sub_p'] = bcmul(bcdiv($askPrice_sub00, $arrayPrice[$n]['askPrice'], 8), 100, 8);
+
+      $askPrice_sub0 = bcsub($historyTicker24hr[$key]['askPrice'],$arrayPrice[0]['askPrice'], 8);
       $arrayPrice[$i]['askPrice_sub_p_0'] = bcmul(bcdiv($askPrice_sub0, $arrayPrice[0]['askPrice'], 8), 100, 8);
 
 
@@ -585,7 +585,7 @@ foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {
       $arrayPrice[$i]['*'] = '***';
       $arrayPrice[$i]['lastPrice'] = $historyTicker24hr[$key]['lastPrice'];
 
-      $lastPrice_sub = bcsub($historyTicker24hr[$key]['lastPrice'], $arrayPrice[$n]['lastPrice'], 8);      
+      $lastPrice_sub = bcsub($historyTicker24hr[$key]['lastPrice'], $arrayPrice[$n]['lastPrice'], 8);
       $arrayPrice[$i]['askPrice_sub_p'] = bcmul(bcdiv($lastPrice_sub, $arrayPrice[$n]['lastPrice'], 8), 100, 8);
 
       $lastPrice_sub0 = bcsub($historyTicker24hr[$key]['lastPrice'],$arrayPrice[0]['lastPrice'], 8);
@@ -593,22 +593,22 @@ foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {
 
 
 
-      
-      
-      
+
+
+
 
       $arrayPrice[$i]['**'] = '***';
- 
+
 
       $arrayPrice[$i]['volume'] = $historyTicker24hr[$key]['volume'];
       $arrayPrice[$i]['volume_n'] = $arrayPrice[$n]['volume'];
 
       $arrayPrice[$i]['volume_sub'] = bcsub($arrayPrice[$i]['volume_n'],$arrayPrice[$i]['volume'], 2);
       $arrayPrice[$i]['***'] = '***';
-      
+
       $arrayPrice[$i]['askQty'] = $historyTicker24hr[$key]['askQty'];
       $arrayPrice[$i]['bidQty'] = $historyTicker24hr[$key]['bidQty'];
-      $arrayPrice[$i]['lastQty'] = $historyTicker24hr[$key]['lastQty']; 
+      $arrayPrice[$i]['lastQty'] = $historyTicker24hr[$key]['lastQty'];
 
       $arrayPrice[$i]['spred'] = $spred = bcsub($arrayPrice[$i]['askPrice'], $arrayPrice[$i]['bidPrice'], 8);
       $arrayPrice[$i]['spred_p'] = bcmul(bcdiv($spred, $arrayPrice[$i]['bidPrice'], 8), 100, 8);
@@ -621,7 +621,7 @@ foreach ($historyTicker24hr_ALL as $keyHT24hr => $historyTicker24hr) {
 
 
 
-      $tt[] = $symbol ;            
+      $tt[] = $symbol ;
 }
     $symbol['SUM_askQty'] = array_sum(array_column($arrayPrice, 'askQty'));
     $symbol['SUM_bidQty'] = array_sum(array_column($arrayPrice, 'bidQty'));
@@ -661,7 +661,7 @@ $symbol['time'] = $value['closeTime'];
   // ПОКУПКА
   //####################################################################################################################################################
   //###########################        #############################
- 
+
 
    //####################################################################################################################################################
     $buy=0;
@@ -669,48 +669,48 @@ $symbol['time'] = $value['closeTime'];
 
     if (-1==bccomp($symbol['Control_p'], -0.3, 8) && 1==bccomp($symbolConfig[$value['symbol']]['top_Price'], 1.002, 8)) {
         $symbol['Control'] .= '+';
-        $buy++;        
+        $buy++;
     }else{
       $symbol['Control'] .= '-';
     }
     //
     if (-1==bccomp($symbol['S_max_p'], $symbolConfig[$value['symbol']]['Op_Low_p'], 8) && -1==bccomp($symbol['S_max_p'], -0.5, 8)) {
         $symbol['Control'] .= '+';
-        $buy++;        
+        $buy++;
     }else{
       $symbol['Control'] .= '-';
     }
     //
     // if (1==bccomp($symbol['Start_p'], 0.001, 8))  {
     //     $symbol['Control'] .= '+';
-    //     $buy++;        
+    //     $buy++;
     // }else{
     //   $symbol['Control'] .= '-';
     // }
     //
     if (0==bccomp($symbol['lastPrice'], $symbol['bidPrice'], 8))  {
         $symbol['Control'] .= '+';
-        $buy++;        
+        $buy++;
     }else{
       $symbol['Control'] .= '-';
     }
     //
     if (!in_array($symbol['asset'], $open))   {
-        $symbol['Control'] .= '+'; 
-        $buy++;        
+        $symbol['Control'] .= '+';
+        $buy++;
     }else{
         $symbol['Control'] .= '-';
-    }    
+    }
     //
     if (count($open)<50)   {
-        $symbol['Control'] .= '+'; 
-        $buy++;        
+        $symbol['Control'] .= '+';
+        $buy++;
     }else{
       $symbol['Control'] .= '-';
     }
     // if (-1== bccomp((string)$price_loss_p, (string)abs($lossМargin_p), 8))  {
-    //     $symbol['stop_loss_p_st']= '+'; 
-    //     $buy++;        
+    //     $symbol['stop_loss_p_st']= '+';
+    //     $buy++;
     // }
     //
 
@@ -724,56 +724,56 @@ $symbol['status']= $buy;
                   // if (-1==bccomp($symbol['Start_p'], -1, 8)) {
                   //   $priceBUY = $Bin->round_min(bcmul($value['bidPrice'], 0.999, 8), $symbolInfo['0']['filters'][0]['minPrice']);
                   // }else{
-                                 
-                  // }   
-            $priceBUY = $value['askPrice']; 
+
+                  // }
+            $priceBUY = $value['askPrice'];
 
                       //параметры ПОКУПКА LIMIT GTC
                       // $symbol['statusTREND']= 'BUY_LIMIT';
-                      // $Params_BUY = array('symbol'=>$value['symbol'], 
-                      //                 'side' => 'BUY', 
-                      //                 'type' => 'LIMIT', 
-                      //                 'quantity' => $Bin->round_min(bcdiv($trade_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $symbolInfo['0']['filters'][2]['minQty']), 
-                      //                 'timeInForce' => 'GTC', 
+                      // $Params_BUY = array('symbol'=>$value['symbol'],
+                      //                 'side' => 'BUY',
+                      //                 'type' => 'LIMIT',
+                      //                 'quantity' => $Bin->round_min(bcdiv($trade_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $symbolInfo['0']['filters'][2]['minQty']),
+                      //                 'timeInForce' => 'GTC',
                       //                 'price' => $priceBUY);
 
-                      //параметры ПОКУПКА LIMIT IOC                      
-                      $Params_BUY = array('symbol'=>$value['symbol'], 
-                                      'side' => 'BUY', 
-                                      'type' => 'LIMIT', 
-                                      'quantity' => $Bin->round_min(bcdiv($trade_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $symbolInfo['0']['filters'][2]['minQty']), 
+                      //параметры ПОКУПКА LIMIT IOC
+                      $Params_BUY = array('symbol'=>$value['symbol'],
+                                      'side' => 'BUY',
+                                      'type' => 'LIMIT',
+                                      'quantity' => $Bin->round_min(bcdiv($trade_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $symbolInfo['0']['filters'][2]['minQty']),
                                       'timeInForce' => 'IOC',
-                                      'recvWindow' => '30000', 
+                                      'recvWindow' => '30000',
                                       'price' => $priceBUY);
 
-                      //параметры ПОКУПКА OCO 
-                      // $Params_BUY = array('symbol'=>$value['symbol'], 
-                      //                 'side' => 'BUY', 
+                      //параметры ПОКУПКА OCO
+                      // $Params_BUY = array('symbol'=>$value['symbol'],
+                      //                 'side' => 'BUY',
                       //                 'quantity' => $Bin->round_min(bcdiv($trade_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $symbolInfo['0']['filters'][2]['minQty']),
                       //                 'price' => $Bin->round_min(bcmul($value['bidPrice'], 0.995, 8), $symbolInfo['0']['filters'][0]['minPrice']),
-                      //                 'stopPrice' => $value['askPrice'], 
+                      //                 'stopPrice' => $value['askPrice'],
                       //                 'timeInForce' => 'GTC');
 
                       //масив параметров BUY_MARKET
-                      // $Params_BUY = array('symbol'=>$value['symbol'], 
-                      //                   'side' => 'BUY', 
-                      //                   'type' => 'MARKET', 
+                      // $Params_BUY = array('symbol'=>$value['symbol'],
+                      //                   'side' => 'BUY',
+                      //                   'type' => 'MARKET',
                       //                   'quantity' => $Bin->round_min(bcdiv($trade_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8),$symbolInfo['0']['filters'][2]['minQty']),
-                      //                   'timeInForce' => 'IOC', 
-                      //                   'price' => $priceBUY);  
+                      //                   'timeInForce' => 'IOC',
+                      //                   'price' => $priceBUY);
 
-                      //параметры ПОКУПКА OCO                                             
-                      $Params_SELL_OCO = array('symbol'=>$value['symbol'], 
-                                        'side' => 'SELL', 
+                      //параметры ПОКУПКА OCO
+                      $Params_SELL_OCO = array('symbol'=>$value['symbol'],
+                                        'side' => 'SELL',
                                         'quantity' => $Bin->round_min($order['executedQty'], $symbolInfo['0']['filters'][2]['minQty']),
                                         'price' => $Bin->round_min(bcmul($priceBUY, $symbolConfig[$value['symbol']]['top_Price'], 8), $symbolInfo['0']['filters'][0]['minPrice']),
                                         'stopPrice' => $Bin->round_min(bcmul($priceBUY, $symbolConfig[$value['symbol']]['top_S_Price'], 8), $symbolInfo['0']['filters'][0]['minPrice']),
-                                        'stopLimitPrice' => $Bin->round_min(bcmul($priceBUY, $symbolConfig[$value['symbol']]['top_SL_Price'], 8), $symbolInfo['0']['filters'][0]['minPrice']), 
-                                        'stopLimitTimeInForce' => 'GTC'); 
+                                        'stopLimitPrice' => $Bin->round_min(bcmul($priceBUY, $symbolConfig[$value['symbol']]['top_SL_Price'], 8), $symbolInfo['0']['filters'][0]['minPrice']),
+                                        'stopLimitTimeInForce' => 'GTC');
 
                       // $Bin->show($Params_BUY);
 
-                          $testOrder[$value['closeTime']]['Time'] =$value['closeTime'];                            
+                          $testOrder[$value['closeTime']]['Time'] =$value['closeTime'];
                           // $testOrder[$value['closeTime']]['symbol'] =$value['symbol'];
                           $testOrder[$value['closeTime']]['asset'] = $symbolInfo['0']['baseAsset'];
                           $testOrder[$value['closeTime']]['USDaskPrice'] = $symbol['USDaskPrice'] ;
@@ -782,20 +782,20 @@ $symbol['status']= $buy;
                           $testOrder[$value['closeTime']]['***'] = '***';
                           // $testOrder[$value['closeTime']] += $Params_SELL_OCO;
                           $testOrder[$value['closeTime']]['M_Price'] = $Params_SELL_OCO['price'];
-                          $testOrder[$value['closeTime']]['SL_Price'] = $Params_SELL_OCO['stopLimitPrice']; 
+                          $testOrder[$value['closeTime']]['SL_Price'] = $Params_SELL_OCO['stopLimitPrice'];
 
                           $testOrder[$value['closeTime']]['status'] = '';
                           $testOrder[$value['closeTime']]['statusTime'] = '';
-                          
+
                             //
                             if ($orderBUY == '1' && count($orderOpen)==0) {
 
                                 //если создаем лемитные ордера то проверяем и удаляем устаревшие
                                 $orderOpen = array();
                                 if ($Params_BUY['timeInForce'] == 'GTC') {
-                                    $ParamsOpen = array('symbol'=>$value['symbol']); 
+                                    $ParamsOpen = array('symbol'=>$value['symbol']);
                                     if ($orderOpen = $Bin->orderOPEN($ParamsOpen)) {
-                                      
+
                                       foreach ($orderOpen as $key => $order) {
                                         $orderOpen[$key]['status'] = '';
                                         if (1 == bccomp((string)$orderOpen['price'] , (string)$priceBUY, 8)) {
@@ -808,20 +808,20 @@ $symbol['status']= $buy;
                                         }
                                       }
                                       echo "Открытые ордера<br/>";
-                                      $Bin->showArrayTable($orderOpen);                               
+                                      $Bin->showArrayTable($orderOpen);
                                     }
                                 }
 
                                 //отправляем BUY ордер
-                                if ($order = $Bin->orderNEW($Params_BUY)) { 
+                                if ($order = $Bin->orderNEW($Params_BUY)) {
                                     $symbol['statusTREND'] = 'BUY_LIMIT NO';
 
                                     if (0 != bccomp((string)$order['executedQty'], (string)0, 8)) {
                                       $symbol['statusTREND'] = 'BUY_LIMIT';
                                       $Params_SELL_OCO['quantity'] = $order['executedQty'];
-                                        
+
                                         //при успехе BUY выставляем ОСО ордера
-                                        if ($orderSELL_OCO == '1') {                                            
+                                        if ($orderSELL_OCO == '1') {
                                             if ($orderOCO = $Bin->OCO($Params_SELL_OCO)) {
                                               $symbol['statusTREND'] = 'BUY_LIMIT + SELL_OCO';
                                             }
@@ -829,15 +829,15 @@ $symbol['status']= $buy;
 
                                         //заполяем историю покупок
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['symbol'] =  $value['symbol'];
-                                        // $historyBUY[$symbolInfo['0']['baseAsset']]['asset'] =  $symbolInfo['0']['baseAsset'];                
-                                        // $historyBUY[$symbolInfo['0']['baseAsset']]['base'] =  $symbolInfo['0']['quoteAsset'];                                    
+                                        // $historyBUY[$symbolInfo['0']['baseAsset']]['asset'] =  $symbolInfo['0']['baseAsset'];
+                                        // $historyBUY[$symbolInfo['0']['baseAsset']]['base'] =  $symbolInfo['0']['quoteAsset'];
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['time'] =  $value['closeTime'];
 
-                                        // $historyBUY[$symbolInfo['0']['baseAsset']]['priceUSD'] = bcmul($value['askPrice'],$kurs['kursUSD'], 8);                
+                                        // $historyBUY[$symbolInfo['0']['baseAsset']]['priceUSD'] = bcmul($value['askPrice'],$kurs['kursUSD'], 8);
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['BUYkursUSD'] = $kurs['kursUSD'];
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['kursUSD'] = $kurs['kursUSD'];
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['correctionUSD'] = 1;
-                                        
+
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['priceBTC'] = bcmul($value['askPrice'],$kurs['kursBTC'], 8);
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['BUYkursBTC'] = $kurs['kursBTC'];
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['kursBTC'] = $kurs['kursBTC'];
@@ -848,15 +848,15 @@ $symbol['status']= $buy;
 
                                         // $symbol['statusBUY']='BUY';
                                         // $historyBUY[$symbolInfo['0']['baseAsset']]['buy'][] = $order;
-                                        // $Bin->saveFile($historyBUY, $filehistoryBUY); 
-                                    }         
+                                        // $Bin->saveFile($historyBUY, $filehistoryBUY);
+                                    }
                                 }
                             }
-                            // $Bin->showArrayTable($historyBUY); 
+                            // $Bin->showArrayTable($historyBUY);
 
             // $symbol+=$ParamsBUY;
     }
-        $select[] = $symbol; 
+        $select[] = $symbol;
 
 }//конец цикла 1
 
@@ -881,7 +881,7 @@ $Bin->saveFile($symbolConfig, $filesymbolConfig);
 // if (!$select = array_values($Bin->multiSearch($select, array('status' => 3, 'status' => 2)))) {
 //   // if (count($select) == 0) {
 //   //   $select = array_values($Bin->multiSearch($select, array('status' => 3)));
-//   // }  
+//   // }
 // }
 usort($select, function($a, $b) {
     return abs($b['status']) - abs($a['status']);
@@ -940,7 +940,7 @@ foreach ($testOrder as $key => $value) {
         $symbol[$value['symbol']]['sumSL'] += $testOrder[$key]['result'];
     }
     $symbol[$value['symbol']]['balans'] = $symbol[$value['symbol']]['sumProfit'] + $symbol[$value['symbol']]['sumSL'];
-    
+
 }
 foreach ($symbol as $key => $value) {
   $symbolConfig[$value['symbol']] += $symbol[$value['symbol']];
