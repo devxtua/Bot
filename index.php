@@ -30,6 +30,7 @@ require "./~core/model/user_c.php";
 require "./libraries/binance_api/vendor/autoload.php";
 
 header( 'Content-type: text/html; charset=utf-8' );
+echo "<!DOCTYPE html>";
 
 echo '<link rel="stylesheet" href="./html/css/style.css">';
 echo '<script type="text/javascript" src="./libraries/jquery.js"></script>';
@@ -130,7 +131,8 @@ $exchange = 'binance';
 
 $result = '';
 if ($_GET['action'] == '') {
-	echo '<p style="text-align: right; "><a href="bot.php?action=show" target="_blank">bot</a></p>';
+	echo '<p style="text-align: right; "><a href="./cron/bot.php?action=show" target="_blank">bot</a></p>';
+	echo '<p style="text-align: right; "><a href="./cron/updating_strategies.php?action=show" target="_blank">updat_strategies</a></p>';
 
 
 	//проверяем стратегии user
@@ -463,18 +465,18 @@ if ($_GET['action'] == '') {
 		}else{
 				$result .= '<tr>';
 				$result .= '<td>Кофициент PROFIT:</td>';
-				$result .= '<td><input size="5" type="number" name="config[coefficient_profit][min]" step="0.00000001" value="1.003"></td>';
-				$result .= '<td><input size="5" type="number" name="config[coefficient_profit][max]" step="0.00000001" value="1.05"></td>';
-				$result .= '<td><input size="5" type="number" name="config[coefficient_profit][step]" step="0.00000001" value="0.01"></td>';
+				$result .= '<td><input size="5" type="number" name="config[coefficient_profit][min]" step="0.00000001" value="1.01"></td>';
+				$result .= '<td><input size="5" type="number" name="config[coefficient_profit][max]" step="0.00000001" value="1.01"></td>';
+				$result .= '<td><input size="5" type="number" name="config[coefficient_profit][step]" step="0.00000001" value="0"></td>';
 				$result .= '<input size="5" type="hidden" name="config[coefficient_profit][count]" step="0.00000001" value="0">';
 				$result .= '</tr>';
 
 
 				$result .= '<tr>';
 				$result .= '<td>Кофициент STOP LOSS::</td>';
-				$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][min]" step="0.00000001" value="0.95"></td>';
-				$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][max]" step="0.00000001" value="0.995"></td>';
-				$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][step]" step="0.00000001" value="0.01"></td>';
+				$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][min]" step="0.00000001" value="0.999"></td>';
+				$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][max]" step="0.00000001" value="0.999"></td>';
+				$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][step]" step="0.00000001" value="0"></td>';
 				$result .= '<input size="5" type="hidden" name="config[coefficient_stop_loss][count]" step="0.00000001" value="0">';
 				$result .= '</tr>';
 
@@ -510,15 +512,16 @@ if ($_GET['action'] == '') {
 		}
 
 		$result .= '</table><br/>';
-
+		$startTime = time() - $Bin->interval[$strateg['interval']]*1000;
+		$result .= '<p>УСТАНОВЛЕН период тестирования 1000 последних свичей. МОЖНО ИЗМЕНИТЬ : start <input type="datetime-local"  name="startTime" value="'.date('Y-m-d', $startTime).'T'.date('H:i', $startTime).'"/>&nbsp;
+	               	 end<input type="datetime-local"  name="endTime" value="'.date('Y-m-d').'T'.date('H:i').'"/></p>';
+		$result .= '<input type="submit" name="button" value="BEST_indicators">&nbsp; Также можно протестировать &nbsp;';
 		$result .= '<input type="submit" name="button" value="OPTIONS">&nbsp;';
 		$result .= '<input type="submit" name="button" value="COMBINATIONS">&nbsp;&nbsp;';
-		$result .=  'Период тестирования: start <input type="datetime-local"  name="startTime"/>&nbsp;
-	               	 end<input type="datetime-local"  name="endTime" value='.date("Y-m-d H:i:s", time()).'/>&nbsp;';
+
 		$result .= '<input type="submit" name="button" value="TEST COMBINATIONS">';
 		$result .= '</form>';
 		echo $result ;
-
 
 		if (strcasecmp($_POST['button'], 'options') == 0) {
 			$options_indicator = Functions::options_indicator($_POST['config']);
@@ -535,6 +538,12 @@ if ($_GET['action'] == '') {
 			$combinations = Functions::combinations_options($options_indicator, array_keys($options_indicator));
 			echo 'COMBINATIONS: <strong>'. number_format(count($combinations), 0, ',', ' ')."</strong> вариантов настроек<br/>";
 			Functions::showArrayTable($combinations, '');
+
+		}elseif (strcasecmp($_POST['button'], 'BEST_indicators') == 0) {
+			$funded_klines = $Bin->funded_klines($strateg, strtotime($_POST['startTime'])*1000, strtotime($_POST['endTime'])*1000);
+			$best_indicators = Functions::best_indicators($strateg, $funded_klines);
+
+			Functions::show($best_indicators, 'best_indicators');
 
 		}elseif (strcasecmp($_POST['button'], 'TEST COMBINATIONS') == 0) {
 				// Functions::show($_POST);
@@ -580,12 +589,39 @@ if ($_GET['action'] == '') {
 	// Functions::show($Users->user_arrey[$_POST['login']]['binance']['config']['KEY']);
 	$Bin = new binance($Users->user_arrey[$_POST['login']]['binance']['config']['KEY'], $Users->user_arrey[$_POST['login']]['binance']['config']['SEC']);
 	$strateg = $Users->user_arrey[$_POST['login']][$_POST['exchange']]['strategies'][$_POST['key']];
-	if ($allOrders = $Bin->allOrders(array('symbol'=>$strateg['symbol']))){
+	if ($allOrders = $Bin->allOrders(array('symbol'=>$strateg['symbol'], 'limit'=>1000))){
+		$sum = 0;
 		foreach ($allOrders as $key => $value) {
-			if (stristr($value['clientOrderId'], $_POST['key'])===false) unset($allOrders[$key]);
-			if ($value['status'] == 'EXPIRED'|| $value['status'] == 'CANCELED') unset($allOrders[$key]);
+
+			if (stristr($value['clientOrderId'], $_POST['key'])===false){
+				unset($allOrders[$key]);
+				continue;
+			}
+			if ($value['status'] == 'EXPIRED'|| $value['status'] == 'CANCELED'){
+				unset($allOrders[$key]);
+				continue;
+			}
+
+			if ($value['side'] == 'BUY') {
+				$sum -= $value['cummulativeQuoteQty'];
+			}else{
+				$sum += $value['cummulativeQuoteQty'];
+			}
+			$allOrders[$key]['price_fact'] ='';
+			if ($value['status'] != 'NEW') {
+				$allOrders[$key]['price_fact'] = bcdiv($value['cummulativeQuoteQty'], $value['executedQty'], 8);
+			}
+			$allOrders[$key]['balans'] = round($sum, 2);
 		}
-		Functions::showArrayTable_key(array_reverse($allOrders), 'История стратегии '.$_POST['key'].' количество'.count($allOrders));
+
+		$invest = abs(min(array_column($allOrders, 'balans')));
+		$roi = bcdiv($sum, $invest, 4)*100;
+		$title = 'Cтратегия: '.$_POST['key'].'<br/>';
+		$title .= 'Количество операций: '.count($allOrders).'<br/>';
+		$title .= 'Максимальная инвистиция: '.$invest.'<br/>';
+		$title .= 'Баланс: <font size="10" color="green" face="Arial">'.round($sum,2).'</font>$<br/>';
+		$title .= 'ROI: <font size="10" color="green" face="Arial">'.$roi.'</font>%<br/>';
+		Functions::showHistory(array_reverse($allOrders), $title);
 	}
 	// if ($myTrades = $Bin->myTrades(array('symbol'=>$strateg['symbol']))){
 	// 	Functions::showArrayTable(array_reverse($myTrades));

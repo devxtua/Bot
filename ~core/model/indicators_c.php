@@ -2,6 +2,8 @@
 
 // namespace binance;
 class Indicators{
+
+
     private $klines = [];
     public $indicator_arrey = [];
 
@@ -101,10 +103,12 @@ class Indicators{
     }
     // ****************************Индикаторы**********************************************
     //все индикатры klines с биржи
-    public function all_indicator($symbol, $interval){
+    public function all_indicator($symbol, $interval, &$klines = ''){
         $result = [];
         if ($interval != 'off') {
-            $klines = $GLOBALS['Bin']->klines(array('symbol'=>$symbol, 'interval' => $interval, 'limit' => 1000));
+            if ($klines == '') {
+                $klines = $GLOBALS['Bin']->klines(array('symbol'=>$symbol, 'interval' => $interval, 'limit' => 1000));
+            }
             $this->klines = &$klines;
             $klin = end($klines);
 
@@ -117,7 +121,7 @@ class Indicators{
             $result += $this->indicator_klines_last_down($interval, $klines);
             $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
         }
-        $result += $this->indicator_ticker24hr($symbol);
+        // $result += $this->indicator_ticker24hr($symbol);
         return $result;
     }
      //Иникаторы клинов
@@ -131,7 +135,6 @@ class Indicators{
             $result += $this->indicator_klin_Taker_buy_base_asset_volume($interval,  $klin);
             $result += $this->indicator_klin_Taker_buy_quote_asset_volume($interval,  $klin);
             $result += $this->indicator_klin_last_price($interval,  $klin);
-
             $result += $this->indicator_klines_last_down($interval, $klines);
             $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
         return $result;

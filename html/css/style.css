@@ -60,4 +60,17 @@ body {
 }
 
 
+tr.marked {
+	background-color: #cfc;
+}
+/*tr.srok {
+	background-color: #efefe9;
+}*/
+
+tr:hover {
+    background: #f90;
+    color:  #fff;
+}
+
+
 

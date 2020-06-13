@@ -7,6 +7,8 @@ class Binance{
     private $URL = 'https://api.binance.com';
     private $Proxy = '';
 
+    public $interval = array('1m'=> 60,'3m'=> 180,'5m'=> 300,'15m'=> 900,'30m'=> 1800,'1h'=> 3600,'2h'=> 7200,'4h'=> 14400,'6h'=> 21600,'8h'=> 28800,'12h'=>43200,'1d'=> 86400,'3d'=> 259200,'1w'=> 604800,'1M'=> 2592000);
+
 
     private $filetradeFeeKom = 'D:\binance\tradeFeeKom.txt';
     private $fileexchangeInfo = 'D:\binance\exchangeInfo.txt';
@@ -303,16 +305,15 @@ class Binance{
             sleep(1);
         }
     }
-    //проверка проверка индикаторов одной стратегии
+    //получение исторических даных
     public function funded_klines(&$strateg, $startTime='', $endTime=''){
-        $interval = array('1m'=> 60,'3m'=> 180,'5m'=> 300,'15m'=> 900,'30m'=> 1800,'1h'=> 3600,'2h'=> 7200,'4h'=> 14400,'6h'=> 21600,'8h'=> 28800,'12h'=>43200,'1d'=> 86400,'3d'=> 259200,'1w'=> 604800,'1M'=> 2592000);
 
         if ($endTime == '') $endTime = time()*1000;
-        if ($startTime =='') $startTime = $endTime - $interval[$strateg['interval']]*1000000;
-        $startTime = $startTime - $interval[$strateg['interval']]*1000000;
+        if ($startTime =='') $startTime = $endTime - $this->interval[$strateg['interval']]*1000000;
+        $startTime = $startTime - $this->interval[$strateg['interval']]*1000000;
         $funded = [];
         while ($startTime < $endTime) {
-            $end = $startTime + $interval[$strateg['interval']]*1000000;
+            $end = $startTime + $this->interval[$strateg['interval']]*1000000;
             $klines = $GLOBALS['Bin']->klines(array('symbol'=>$strateg['symbol'],
                                                     'interval' => $strateg['interval'],
                                                     'startTime' => $startTime,

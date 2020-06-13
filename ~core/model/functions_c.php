@@ -44,6 +44,7 @@ class Functions{
         if (!is_array($array)) {
            return;
         }
+        $n = 0;
         foreach ($array as $key1 => $value1) {
                     if ( $i == 0) {
                         echo "<tr>";
@@ -53,7 +54,11 @@ class Functions{
                         echo '</tr>';
                         $i++;
                     }
-                    echo "<tr>";
+                    if (++$n%2==0) {
+                        echo '<tr class="srok">';
+                    }else{
+                        echo "<tr>";
+                    }
                     if (is_array($value1)) {
                        foreach ($value1 as $key => $value) {
 
@@ -88,7 +93,7 @@ class Functions{
 
         echo '</table><br/>';
     }
-        //посмотреть масив таблицей
+    //посмотреть масив таблицей
     public static function showArrayTable_key($array, $title='Название не указано'){
         echo  "$title";
         echo  "<table border='1'>";
@@ -96,6 +101,7 @@ class Functions{
         if (!is_array($array)) {
            return;
         }
+        $n=0;
         foreach ($array as $key1 => $value1) {
                     if ( $i == 0) {
                         echo "<tr>";
@@ -106,7 +112,11 @@ class Functions{
                         echo '</tr>';
                         $i++;
                     }
-                    echo "<tr>";
+                    if (++$n%2==0) {
+                        echo '<tr class="srok">';
+                    }else{
+                        echo "<tr>";
+                    }
                     if (is_array($value1)) {
                         echo '<td>', $key1, '</td>';
                        foreach ($value1 as $key => $value) {
@@ -145,7 +155,55 @@ class Functions{
 
         echo '</table><br/>';
     }
+        //посмотреть масив таблицей
+    public static function showHistory($array, $title='Название не указано'){
+        echo  "$title";
+        echo  "<table border='1'>";
+        $i = $sum = 0;
+        if (!is_array($array)) {
+           return;
+        }
+        foreach ($array as $key1 => $value1) {
+                    if ( $i == 0) {
+                        echo "<tr>";
+                        echo '<th>key</th>';
+                        foreach ($value1 as $key => $value) {
+                            echo '<th>', $key, '</th>';
+                        }
+                        echo '</tr>';
+                        $i++;
+                    }
+                    if ($value1['side'] == 'BUY') {
+                        echo '<tr class="marked">';
+                    }else{
+                        echo "<tr>";
+                    }
 
+                    if (is_array($value1)) {
+                        echo '<td>', $key1, '</td>';
+                       foreach ($value1 as $key => $value) {
+
+                            if (strcasecmp($key, 'time') == 0
+                                || strcasecmp($key, 'updateTime') == 0) {
+                                echo '<td>', date("Y-m-d H:i:s", $value/1000), '</td>';
+                            }else{
+                                if (is_array($value)) {
+                                    echo '<td> arrey(', count($value), ')</td>';
+                                }else{
+                                    echo '<td>', $value, '</td>';
+                                }
+                            }
+                        }
+                    }else{
+
+                        echo '<td>   ', $value1, '   </td>';
+                    }
+
+                     echo '</tr>';
+        }
+
+        echo '</table><br/>';
+    }
     //посмотреть масив таблицей
     public static function showStrategies($user, $title='Название не указано'){
 
@@ -156,6 +214,7 @@ class Functions{
             echo  "$title";
             echo  "<table border='1'>";
             $i = 0;
+            $n = 0;
             foreach ($value_user['strategies'] as $key1 => $value1) {
                 if ( $i == 0) {
                     echo "<tr>";
@@ -165,7 +224,11 @@ class Functions{
                     echo '</tr>';
                     $i++;
                 }
-                echo "<tr>";
+                 if (++$n%2==0) {
+                        echo '<tr class="srok">';
+                    }else{
+                        echo "<tr>";
+                    }
                 if (is_array($value1)) {
                    foreach ($value1 as $key => $value) {
                         if($key == 'symbol'){
@@ -439,16 +502,19 @@ class Functions{
     }
     //****
     //тестовая закупка OCO и добавление в масив
-    public static function test_buy_OCO(&$test, $strategies, $klin, $combination){
+    public static function test_buy_OCO(&$test, $strateg, $klin, $combination =''){
+        $param = ($combination == '')?  $strateg: $combination;
+
         //Формируем параметры тестового ОСО
+        $temp = $strateg['all_klines_indicator'];
             $temp['timeBUY'] = $klin[6];
             $temp['Price_BUY'] = $klin[4];
-            $temp['Price_TP'] = bcmul($klin[4], $combination['coefficient_profit'], 8);
-            $temp['Price_SL'] = bcmul($klin[4], $combination['coefficient_stop_loss'], 8);
-            $temp['quantity'] = bcdiv($strategies['trading_limit'], $klin[4], 8);
+            $temp['Price_TP'] = bcmul($klin[4], $param['coefficient_profit'], 8);
+            $temp['Price_SL'] = bcmul($klin[4], $param['coefficient_stop_loss'], 8);
+            $temp['quantity'] = bcdiv($strateg['trading_limit'], $klin[4], 8);
 
             $temp['sum_BUY'] = bcmul($temp['Price_BUY'], $temp['quantity'], 8);
-            $temp['taker'] = bcmul($temp['sum_BUY'], $GLOBALS['tradeFeeKom'][$strategies['symbol']]['taker'], 8);
+            $temp['taker'] = bcmul($temp['sum_BUY'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['taker'], 8);
 
             $temp['sum_SELL'] = '';
             $temp['maker'] = '';
@@ -460,45 +526,60 @@ class Functions{
             $temp['margin'] = '';
             $temp['commission'] = '';
             $temp['profit'] = '';
+
         //заносим в масив тестовых покупок
         $test[] = $temp;
     }
 
     //проверка на продажу масива тестовых закупок OCO
-    public static function test_check_sell(&$test, $strategies, $klin, $end){
+    public static function test_check_sell(&$test, $strateg, $klin, $end){
         $lastBUY = $klin[2];
          //Проверка открытых ордеров
         $open= 0;
         foreach ($test as $testK => $value) {
 
             if ($value['status'] != '') continue;
+            //продажа sl
+            //
+            // if (-1 == bccomp($klin[3], $value['Price_SL'], 8) && 1 == bccomp($klin[2], $value['Price_TP'], 8)) {
+            //     $test[$testK]['status'] = 'SL/TP';
+            //     $test[$testK]['timeSELL'] = $klin[0];
 
+            //     $test[$testK]['sum_SELL'] = '';
+            //     $test[$testK]['maker'] = '';
+
+            //     $test[$testK]['margin'] = '';
+            //     $test[$testK]['commission'] =  '';
+            //     $test[$testK]['profit'] = '';
+            //     continue;
+            // }
+            //
+            if (-1 == bccomp($klin[3], $value['Price_SL'], 8)) {
+                $test[$testK]['status'] = 'SL';
+                $test[$testK]['timeSELL'] = $klin[0];
+
+                $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_SL'], $test[$testK]['quantity'], 8);
+                $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
+
+                $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
+                $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
+                $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['taker+maker'], 8);
+                continue;
+            }
             //продажа profit
             if (1 == bccomp($klin[2], $value['Price_TP'], 8)) {
                 $test[$testK]['status'] = 'TP';
                 $test[$testK]['timeSELL'] = $klin[0];
 
                 $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_TP'], $test[$testK]['quantity'], 8);
-                $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strategies['symbol']]['maker'], 8);
+                $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
 
                 $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
                 $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
                 $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['taker+maker'], 8);
                 continue;
             }
-            //продажа sl
-            if (-1 == bccomp($klin[3], $value['Price_SL'], 8)) {
-                $test[$testK]['status'] = 'SL';
-                $test[$testK]['timeSELL'] = $klin[0];
 
-                $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_SL'], $test[$testK]['quantity'], 8);
-                $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strategies['symbol']]['maker'], 8);
-
-                $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
-                $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
-                $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['taker+maker'], 8);
-                continue;
-            }
             //распродажа открытых
             if ($end) {
                 $test[$testK]['status'] = 'out';
@@ -510,8 +591,6 @@ class Functions{
                 $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
                 $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
                 $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['taker+maker'], 8);
-
-
             }
             //запоменаем количество открытых ордеров
             $test[$testK]['open'] = ++$open;
@@ -558,10 +637,11 @@ class Functions{
     }
 
     //TEST COMBINATIONS
-    public static function test_combination(&$combinations, $strategies, &$funded_klines){
+    public static function test_combination(&$combinations, $strateg, &$funded_klines){
         // Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
+        // die();
         $finish = count($funded_klines);
-        $control = count($strategies['indicator_arrey']); //количество индикаторов стратегии
+        $control = count($strateg['indicator_arrey']); //количество индикаторов стратегии
         foreach ($combinations as $key_com => $combination) {
             // Functions::show($combination, 'test');
             $klinesTest = $funded_klines;
@@ -574,34 +654,31 @@ class Functions{
                 $klines = array_slice($klinesTest, $start, 1000);
                 $klin = end($klines);
 
-                $all_klines_indicator = $GLOBALS['Indicators']->all_klines_indicator($klines, $strategies['interval']);
+                // $all_klines_indicator = $GLOBALS['Indicators']->all_klines_indicator($klines, $strateg['interval']);
+                $all_klines_indicator = $GLOBALS['Indicators']->all_indicator($strateg['symbol'], $strateg['interval'], $klines);
 
                 // echo date("Y-m-d H:i:s", $klin[0]/1000), "<br/>";
                 // Functions::show($all_klines_indicator, '');
 
                 //проверяем на срабатывание выставленые ордера на каждой свече
-                Functions::test_check_sell($test, $strategies, $klin, false);
+                Functions::test_check_sell($test, $strateg, $klin, false);
 
                 //Проверяем индикаторы стратегии на каждой свече
                 $yes = 0;
-                foreach ($strategies['indicator_arrey'] as $key=> $indicator) {
+                foreach ($strateg['indicator_arrey'] as $key=> $indicator) {
                     //Проверяем и плюсуем подтверждения
                     $yes += Functions::comparison_indicator($all_klines_indicator[$indicator['indicator']], $indicator['operator'], $combination[$indicator['indicator']]);
                 }
                 //если все условия выполняются покупаем
-                if ($control == $yes) Functions::test_buy_OCO($test, $strategies, $klin, $combination);
+                if ($control == $yes) Functions::test_buy_OCO($test, $strateg, $klin, $combination);
             }
             //конечная распродажа на последний klin (закупки нет)
-            Functions::test_check_sell($test, $strategies, $end_klines, true);
+            Functions::test_check_sell($test, $strateg, $end_klines, true);
 
-            // echo date("Y-m-d H:i:s", $end_klines[0]/1000), " end<br/>";
-            // Functions::showArrayTable($test, 'Всего '.count($test));
-            // die();
-
-            //ИТОГИ
+            //******************ИТОГИ тестирования комбинации***************************
             $combinations[$key_com]['**'] = '***';
             $combinations[$key_com]['klines'] = $finish-1000;
-            foreach (['TP','SL','out'] as $status) {
+            foreach (['TP','SL', 'out'] as $status) {
                 if ($status_array = Functions::multiSearch($test, array('status' => $status))) {
                     $combinations[$key_com][$status] = count($status_array);
                     $combinations[$key_com][$status.'_sum'] = round(array_sum(array_column($status_array, 'profit')), 2);
@@ -610,23 +687,30 @@ class Functions{
                     $combinations[$key_com][$status.'_sum'] = 0;
                 }
             }
-            //
-            if ($combinations[$key_com]['TP'] < 1 || $combinations[$key_com]['SL'] < 1 || $combinations[$key_com]['SL'] > $combinations[$key_com]['TP']) {
+            //Удаляем combinations если нет TP
+            if ($combinations[$key_com]['TP'] < 1) {
+                unset($combinations[$key_com]);
+                continue;
+            }
+
+            //Удаляем combinations если нет max_open
+            $max_open = max(array_column($test, 'open'));
+            if ($max_open < 1) {
                 unset($combinations[$key_com]);
                 continue;
             }
 
             $combinations[$key_com]['all'] = count($test);
             $combinations[$key_com]['***'] = '***';
-            $max_open = max(array_column($test, 'open'));
             $combinations[$key_com]['profit'] = round(array_sum(array_column($test, 'profit')), 2);
-            $combinations[$key_com]['invest'] = bcmul($max_open, $strategies['trading_limit'], 3);
-            $combinations[$key_com]['invest_%'] = bcdiv($combinations[$key_com]['profit'], $combinations[$key_com]['invest'], 5)*100;
+            $combinations[$key_com]['invest_max'] = bcmul($max_open, $strateg['trading_limit'], 3);
+            $combinations[$key_com]['ROI'] = bcdiv($combinations[$key_com]['profit'], $combinations[$key_com]['invest_max'], 5)*100;
 
-            if (-1 == bccomp($combinations[$key_com]['invest_%'], 0.2, 8)){
-                unset($combinations[$key_com]);
-                continue;
-            }
+            //Удаляем combinations если ROI меньше 0,01
+            // if (-1 == bccomp($combinations[$key_com]['ROI'], 3.01, 8)){
+            //     unset($combinations[$key_com]);
+            //     continue;
+            // }
 
             //останавливаем для отладки
             // if ($combinations[$key_com]['all'] > 10) {
@@ -639,9 +723,87 @@ class Functions{
 
             unset($test);
         }
+
         usort($combinations, function($a, $b) {
-            return $b['invest_%']*100000 - $a['invest_%']*100000;
+            return $b['ROI']*100000 - $a['ROI']*100000;
         });
+    }
+    //лучшие показатели индикаторов
+    public static function best_indicators($strateg, &$funded_klines){
+        // Functions::show($strategies, 'strategies');
+        // Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
+
+        $finish = count($funded_klines);
+        $klinesTest = $funded_klines;
+        $test = [];
+        //тестируем
+        $Ind = '';
+        $end_klines = array_pop($klinesTest); //фиксируем последний klin
+        for ($i=1000; $i < $finish; $i++) {
+            $start = $i-1000;
+            $klines = array_slice($klinesTest, $start, 1000);
+            $klin = end($klines);
+
+            //проверяем на срабатывание выставленые ордера на каждой свече
+            Functions::test_check_sell($test, $strateg, $klin, false);
+
+            // $strateg['all_klines_indicator'] = $GLOBALS['Indicators']->all_klines_indicator($klines, $strateg['interval']);
+            $strateg['all_klines_indicator'] = $GLOBALS['Indicators']->all_indicator($strateg['symbol'], $strateg['interval'], $klines);
+
+            //закупаем
+            Functions::test_buy_OCO($test, $strateg, $klin);
+            // if ($i == 1100) break;
+        }
+        //конечная распродажа на последний klin (закупки нет)
+        Functions::test_check_sell($test, $strateg, $end_klines, true);
+
+        foreach ($test as $key => $value) {
+            //Удаляем убыточные закупки
+            if (-1 == bccomp($value['profit'], 0, 8)) unset($test[$key]);
+        }
+
+        //******************ИТОГИ тестирования комбинации***************************
+
+        $result['klines'] = $finish-1000;
+        $result['all'] = count($test);
+        foreach (['TP','SL','out'] as $status) {
+            if ($status_array = Functions::multiSearch($test, array('status' => $status))) {
+                $result[$status] = count($status_array);
+                $result[$status.'_sum'] = round(array_sum(array_column($status_array, 'profit')), 2);
+            }else{
+                $result[$status] = 0;
+                $result[$status.'_sum'] = 0;
+            }
+        }
+
+        $max_open = max(array_column($test, 'open'));
+
+        $result['profit'] = round(array_sum(array_column($test, 'profit')), 2);
+        $result['invest_max'] = bcmul($max_open, $strateg['trading_limit'], 3);
+        $result['ROI'] = bcdiv($result['profit'], $result['invest_max'], 5)*100;
+
+        $array_indicator = [];
+        foreach (reset($test) as $key => $value) {
+            if (!stristr($key, 'indicator')) continue;
+                $array_indicator[$key]['indicator'] = $key;
+                $array_indicator[$key]['unique'] = count(array_unique(array_column($test, $key)));
+                $array_column = array_column($test, $key);
+                $array_indicator[$key]['min'] = min($array_column);
+                $array_indicator[$key]['max'] = max($array_column);
+                $array_indicator[$key]['avg'] = bcdiv(array_sum($array_column), $result['all'],  8);
+
+
+        }
+
+
+    // usort($combinations, function($a, $b) {
+    //     return $b['ROI']*100000 - $a['ROI']*100000;
+    // });
+
+        Functions::show($result, 'result');
+        Functions::showArrayTable($array_indicator, 'array_indicator ');
+        Functions::showArrayTable($test, 'test ');
+        return $result;
     }
 
     //
