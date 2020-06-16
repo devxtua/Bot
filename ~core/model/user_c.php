@@ -7,9 +7,6 @@ class Users {
 
         public $user = [];
 
-        public $smsAPI = '';
-
-
 
 	  //конструктор КЛАССА
     public function __construct($login = ''){

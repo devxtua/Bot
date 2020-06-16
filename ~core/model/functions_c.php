@@ -62,12 +62,10 @@ class Functions{
                     if (is_array($value1)) {
                        foreach ($value1 as $key => $value) {
 
-                            if (strcasecmp($key, '0000') == 0
+                            if (strcasecmp($key, '0') == 0
                                 ||strcasecmp($key, 'timeBUY') == 0
                                 || strcasecmp($key, 'timeSELL') == 0
-                                || strcasecmp($key, 'closeTime') == 0
-                                || strcasecmp($key, 'BUYTime') == 0
-                                || strcasecmp($key, 'updateTime') == 0) {
+                                || strcasecmp($key, 'closeTime') == 0) {
                                 echo '<td>', date("Y-m-d H:i:s", $value/1000), '</td>';
                             }elseif (strcasecmp($key, '1110') == 0
                                 || strcasecmp($key, 'Start_time') == 0
@@ -75,6 +73,13 @@ class Functions{
                                 || strcasecmp($key, 'max_date') == 0
                                 || strcasecmp($key, 'min_date') == 0) {
                                 echo '<td>', date("H:i:s", $value/1000), '</td>';
+                            }elseif(strcasecmp($key, 'time_wday') == 0
+                                || strcasecmp($key, 'time_mday') == 0) {
+                                echo '<td>', date("Y-m-d H:i:s", $value), '</td>';
+                            }elseif(strcasecmp($key, 'time_hours') == 0
+                                || strcasecmp($key, 'time_minutes') == 0
+                                || strcasecmp($key, 'time_seconds') == 0 ) {
+                                echo '<td>', date("H:i:s", $value), '</td>';
                             }else{
                                 if (is_array($value)) {
                                     echo '<td> arrey(', count($value), ')</td>';
@@ -274,13 +279,12 @@ class Functions{
                     <input type="submit" value="ИСТОРИЯ СДЕЛОК">
                     </form></td>';
                 //кнопка изменить
-                echo'<td><form action="index.php?action=strateg_change" method="post">
+                echo'<td><form action="index.php?action=remove" method="post">
                     <input type="hidden" name="login" value="'.$user['login'].'">
                     <input type="hidden" name="exchange" value="'.$key_user.'">
                     <input type="hidden" name="key" value="'.$key1.'">
-                    <input type="submit" value="&#9881;">
+                    <input type="submit" value="&times;">
                     </form></td>';
-
                 echo '</tr>';
             }
             echo '</table><br/>';
@@ -367,7 +371,7 @@ class Functions{
         }
         return array_values($found);
     }
-
+    //***********************************ТЕСТИРОВАНИЕ*************************************************
     //обеденение двух двухмерных масивов по ключу
     public static function array_map_keys($param1,$param2,$param3=NULL){
         $res = array();
@@ -402,7 +406,6 @@ class Functions{
         return $res;
     }
 
-    //***********************************ТЕСТИРОВАНИЕ*************************************************
     //определяем варианты индикатора
     public static function options_indicator ($arrays){
       $result = [];
@@ -530,7 +533,6 @@ class Functions{
         //заносим в масив тестовых покупок
         $test[] = $temp;
     }
-
     //проверка на продажу масива тестовых закупок OCO
     public static function test_check_sell(&$test, $strateg, $klin, $end){
         $lastBUY = $klin[2];
@@ -635,7 +637,6 @@ class Functions{
           $strateg['indicator_check'] = $t.'/'.$conditions;
         }
     }
-
     //TEST COMBINATIONS
     public static function test_combination(&$combinations, $strateg, &$funded_klines){
         // Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
@@ -728,6 +729,22 @@ class Functions{
             return $b['ROI']*100000 - $a['ROI']*100000;
         });
     }
+    //сохранение результатов тестирования
+    public static function settings_statistics(&$combinations){
+        $strateg = $combinations[0];
+        $strateg['*'] = '***';
+        $strateg['time'] = time()*1000;
+        $strateg['count'] = count($combinations);
+
+        $file = 'D:\binance\settings_statistics.txt';
+        $settings_statistics = Functions::readFile($file);
+
+        $settings_statistics[] = $strateg;
+        Functions::saveFile($settings_statistics, $file);
+        return $settings_statistics;
+    }
+
+    //***********************************Аналитиз*************************************************
     //лучшие показатели индикаторов
     public static function best_indicators($strateg, &$funded_klines){
         // Functions::show($strategies, 'strategies');
@@ -747,7 +764,6 @@ class Functions{
             //проверяем на срабатывание выставленые ордера на каждой свече
             Functions::test_check_sell($test, $strateg, $klin, false);
 
-            // $strateg['all_klines_indicator'] = $GLOBALS['Indicators']->all_klines_indicator($klines, $strateg['interval']);
             $strateg['all_klines_indicator'] = $GLOBALS['Indicators']->all_indicator($strateg['symbol'], $strateg['interval'], $klines);
 
             //закупаем
@@ -794,32 +810,137 @@ class Functions{
 
 
         }
-
-
-    // usort($combinations, function($a, $b) {
-    //     return $b['ROI']*100000 - $a['ROI']*100000;
-    // });
+        // usort($combinations, function($a, $b) {
+        //     return $b['ROI']*100000 - $a['ROI']*100000;
+        // });
 
         Functions::show($result, 'result');
         Functions::showArrayTable($array_indicator, 'array_indicator ');
-        Functions::showArrayTable($test, 'test ');
-        return $result;
+        // Functions::showArrayTable($test, 'test ');
+        return ;
     }
 
+    //лучшие показатели индикаторов
+    public static function analytics_indicators($strateg, &$funded_klines){
+        // Functions::show($strategies, 'strategies');
+        // Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
+
+        $finish = count($funded_klines);
+        $klinesTest = $funded_klines;
+        $test = [];
+        //получаем индикаторы каждой свичи
+        for ($i=1000; $i < $finish; $i++) {
+            $start = $i-1000;
+            $klines = array_slice($klinesTest, $start, 1000);
+            //анализируемый klin
+            $klin = end($klines);
+
+            $all_indicator = $GLOBALS['Indicators']->all_indicator($strateg['symbol'], $strateg['interval'], $klines);
+                //Определяем тренд свечи
+                if (-1== bccomp((string)$klin[4], (string)$klin[1], 8)) {
+                    $all_indicator['trend'] = 'down';
+                }else if (1== bccomp((string)$klin[4], (string)$klin[1], 8)) {
+                    $all_indicator['trend'] = 'up';
+                }else if (0== bccomp((string)$klin[4], (string)$klin[1], 8)) {
+                    $all_indicator['trend'] = 'equally';
+                }
+
+            //добавляем в масив
+            $test[] = $all_indicator;
+        }
+
+        //******************ИТОГИ ***************************
+
+
+        foreach (['all', 'down', 'up', 'equally'] as $key => $trend) {
+            //анализ trend
+            if ($trend == 'all') {
+                $search = $test;
+            }else{
+                $search = Functions::multiSearch($test, array('trend' => $trend));
+            }
+
+            foreach (reset($search) as $key => $value) {
+                if (!stristr($key, 'indicator')) continue;
+                    $array_column = array_column($search, $key);
+                    $array_indicator[$key]['indicator'] = $key;
+                    $array_indicator[$key][$trend.'_c'] = count($search);
+                    $array_indicator[$key][$trend.'_min'] = min($array_column);
+                    $array_indicator[$key][$trend.'_max'] = max($array_column);
+
+                        // $explodeDigits = explode('.', (string)$array_indicator[$key][$trend.'_max']);
+                        // $num = strlen((string)$explodeDigits[1]);
+                    $array_indicator[$key][$trend.'_avg'] = bcdiv(array_sum($array_column), $array_indicator[$key][$trend.'_c'],  8);
+            }
+        }
+
+        // Functions::showArrayTable($array_indicator, 'analytics_indicators ');
+        // Functions::showArrayTable($test, 'test ');
+        return $array_indicator;
+    }
+
+    //Определяем максимум минимум 0,5,15,30,60,120,180,240,480 мин
+    public static function klines_max_min($klines, $max_minInterval = ''){
+        // Functions::showArrayTable($klines, '');
+        if ($max_minInterval == '') {
+            $max_minInterval = [0,5,15,30,60,120,180,240,480];
+        }
+
+        $max_min = array();
+        $top = $max = $klines[0][2];
+        $down = $min = $klines[0][3];
+        $flagdown = $average_0_down = $count = 0;
+        $time = time();
+        $IntervalOLD = '';
+        foreach ($klines as $key => $klin) {
+            // echo $key, date("Y-m-d H:i:s", $klin['0']/1000), "<br/>";
+
+            if (-1 == bccomp((string)$max, (string)$klin['2'], 8))  $max = $klin['2'];
+            if (1 == bccomp((string)$min, (string)$klin['3'], 8))  $min = $klin['3'];
+
+            if (in_array($key, $max_minInterval)) {
+                $max_min[$key]['Interval'] = $key;
+
+                $max_min[$key]['date'] = date("Y-m-d H:i:s", $klin['0']/1000);
+                // $max_min[$key]['age'] = date("m-d H:i:s", mktime(0, 0, $time - $klin['0']/1000));
+                $max_min[$key]['Open'] = $klin['1'];
+                $max_min[$key]['High'] = $klin['2'];
+                $max_min[$key]['Low'] = $klin['3'];
+                $max_min[$key]['Close'] = $klin['4'];
+
+                $max_min[$key]['max'] = $max;
+                $max_min[$key]['min'] = $min;
+                $max_min[$key]['spred'] = bcsub($max, $min, 8);
+                $max_min[$key]['spred_%'] = bcdiv(bcmul($max_min[$key]['spred'],100, 8), $max_min[$key]['min'], 8);
+
+                $max_min[$key]['trend'] = bcsub($IntervalOLD['4'], $klin['4'], 8);
+                $max_min[$key]['trend_%'] = bcdiv(bcmul($max_min[$key]['trend'],100, 8), $klin['4'], 8);
+
+                $max_min[$key]['trend_ALL'] = bcsub($klines[0]['4'], $klin['4'], 8);
+                $max_min[$key]['trend_ALL_%'] = bcdiv(bcmul($max_min[$key]['trend_ALL'],100, 8), $klin['4'], 8);
+                $IntervalOLD = $klin;
+            }
+        }
+        return  $max_min;
+    }
     //
-    public static function settings_statistics(&$combinations){
-        $strateg = $combinations[0];
-        $strateg['*'] = '***';
-        $strateg['time'] = time()*1000;
-        $strateg['count'] = count($combinations);
+    public static function settings_strategy($strateg, $analytics_indicators, &$funded_klines){
+        // Functions::showArrayTable($funded_klines, 'funded_klines');
+        $klines_max_min = Functions::klines_max_min($funded_klines, [0,5,10,15,20,30]);
+        Functions::showArrayTable_key($klines_max_min, 'klines_max_min');
 
-        $file = 'D:\binance\settings_statistics.txt';
-        $settings_statistics = Functions::readFile($file);
 
-        $settings_statistics[] = $strateg;
-        Functions::saveFile($settings_statistics, $file);
-        return $settings_statistics;
+        $settings['indicator_arrey']= $strateg['indicator_arrey'];
+
+
+
+
+        return $settings;
+
     }
+
+
+
     //***********************************ТОРГОВЛЯ*************************************************
 
 

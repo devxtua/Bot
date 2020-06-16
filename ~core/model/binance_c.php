@@ -830,145 +830,7 @@ class Binance{
         return  $trade;
     }
 
-    //Определяем бал по спросу
-    public function ball_depthTotal($symbol, $depthTotal){
-        // $depthTotal= $this->depthTotal($symbol);
-        $ball = $sum = $i = 0;
-        foreach ($depthTotal as $key => $value) {
-           if ($key !=0) {
-               $sum += $value['spros'];
-               $i++;
-           }
-        }
-        $return['spros'] = $sum/$i;
-
-        return $return ;
-    }
-
-    //Определяем бал по свечам
-    public function ball_klines($symbol){
-        //,'3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M'
-        $array_interval = array('1m');
-        foreach ($array_interval as $interval) {
-            $klines = $this->klines($symbol);
-            foreach ($klines as $key => $klin) {
-               $klines[$key]['%'] =  $klin['4'] /  $klin['1'];
-            }
-
-            $this->showArrayTable($klines);
-            // $this->show(max($klines));
-        }
-        // die();
-        //находим минимальную и максимальную цену
-
-        // $ball=0;
-        // foreach ($depthTotal as $key => $value) {
-        //    if ($value['spros']<=0.95) {
-        //        $ball+=-1;
-        //    }elseif ($value['spros']>0.95 && $value['spros']<=1.3) {
-        //        $ball+= 0;
-        //    }elseif ($value['spros']>1.3 && $value['spros']<=2) {
-        //        $ball+= 1;
-        //    }elseif ($value['spros']>2) {
-        //        $ball+= 2;
-        //    }
-        // }
-        return  $ball;
-    }
-
-    //Определяем максимум минимум 0,5,15,30,60,120,180,240,480 мин
-    public function max_min($klines, $max_minInterval = ''){
-        // $this->show($klines);
-        // $array_day = array(0,5,15,30,60,120,180,240,480);
-        // $array_day[] = $countIntervalBUY;
-        // $array_day = array_unique($array_day);
-        // sort($array_day);
-
-        $max_min = array();
-        $top = $max = $klines[0]['2'];
-        $down = $min = $klines[0]['3'];
-        $flagdown = $average_0_down = $count = 0;
-        $time = time();
-        $IntervalOLD = '';
-        foreach ($klines as $key => $klin) {
-            // echo $key, date("Y-m-d H:i:s", $klin['0']/1000), "<br/>";
-
-            if (-1 == bccomp((string)$max, (string)$klin['2'], 8))  $max = $klin['2'];
-            if (1 == bccomp((string)$min, (string)$klin['3'], 8))  $min = $klin['3'];
-
-            if (in_array($key, $max_minInterval)) {
-                $max_min[$key]['Interval'] = $key;
-
-                $max_min[$key]['date'] = date("Y-m-d H:i:s", $klin['0']/1000);
-                // $max_min[$key]['age'] = date("m-d H:i:s", mktime(0, 0, $time - $klin['0']/1000));
-                $max_min[$key]['Open'] = $klin['1'];
-                $max_min[$key]['High'] = $klin['2'];
-                $max_min[$key]['Low'] = $klin['3'];
-                $max_min[$key]['Close'] = $klin['4'];
-
-                $max_min[$key]['max'] = $max;
-                $max_min[$key]['min'] = $min;
-                $max_min[$key]['spred'] = bcsub($max, $min, 8);
-                $max_min[$key]['spred_%'] = bcdiv(bcmul($max_min[$key]['spred'],100, 8), $max_min[$key]['min'], 8);
-
-                $max_min[$key]['trend'] = bcsub($IntervalOLD['4'], $klin['4'], 8);
-                $max_min[$key]['trend_%'] = bcdiv(bcmul($max_min[$key]['trend'],100, 8), $klin['4'], 8);
-
-                $max_min[$key]['trend_ALL'] = bcsub($klines[0]['4'], $klin['4'], 8);
-                $max_min[$key]['trend_ALL_%'] = bcdiv(bcmul($max_min[$key]['trend_ALL'],100, 8), $klin['4'], 8);
-                $IntervalOLD = $klin;
-
-
-            }
-        }
-        return  $max_min;
-    }
-
-    //Определяем тренд
-    public function trend($klines){
-        // echo date("Y-m-d H:i:s", $klines[0]['0']/1000), "<br/>";
-          $trend = $trendN = $trend_p = 0;
-          $g_trend = '';
-        foreach ($klines as $key => $value) {
-            if (1==bccomp($value[4], $value[1], 8)) {
-                $change = bcsub($value[4], $value[1], 8);
-                $Price_p = bcmul(bcdiv($change, $value[1], 8),100, 8);
-                $к = 'top';
-                $g_trend .= '+';
-            }
-
-            // if (0==bccomp($value[4], $value[1], 8)) {
-            //     $consolidation = 0;
-            //     $consolN++;
-            // }
-
-            if (-1==bccomp($value[4], $value[1], 8)) {
-                $change = bcsub($value[4], $value[1], 8);
-                $Price_p = bcmul(bcdiv($change, $value[1], 8),100, 8);
-                $к = 'bottom';
-                $g_trend .= '-';
-            }
-
-            if ($trend == $к || $trend=='') {
-                $trendN++;
-                $trend = $к;
-                $trend_p = bcadd($trend_p, $Price_p, 8);
-            }else{
-
-                break;
-            }
-
-
-        }
-
-        $result['trend_p'] = $trend_p;
-        $result['trend'] = $trend;
-        $result['count'] = $trendN;
-        $result['g_trend'] = strrev($g_trend);
-        return $result;
-    }
-
-    //округляем цену или количество кратно min
+        //округляем цену или количество кратно min
     public function round_min($temp, $min){
         $temp = (float)$temp;
             $round_n = 0;
@@ -989,5 +851,101 @@ class Binance{
                return number_format(floor($temp * $n) / $n, $round_n+1, '.', '');
             }
     }
+
+
+
+    // //Определяем бал по спросу
+    // public function ball_depthTotal($symbol, $depthTotal){
+    //     // $depthTotal= $this->depthTotal($symbol);
+    //     $ball = $sum = $i = 0;
+    //     foreach ($depthTotal as $key => $value) {
+    //        if ($key !=0) {
+    //            $sum += $value['spros'];
+    //            $i++;
+    //        }
+    //     }
+    //     $return['spros'] = $sum/$i;
+
+    //     return $return ;
+    // }
+
+    // //Определяем бал по свечам
+    // public function ball_klines($symbol){
+    //     //,'3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M'
+    //     $array_interval = array('1m');
+    //     foreach ($array_interval as $interval) {
+    //         $klines = $this->klines($symbol);
+    //         foreach ($klines as $key => $klin) {
+    //            $klines[$key]['%'] =  $klin['4'] /  $klin['1'];
+    //         }
+
+    //         $this->showArrayTable($klines);
+    //         // $this->show(max($klines));
+    //     }
+    //     // die();
+    //     //находим минимальную и максимальную цену
+
+    //     // $ball=0;
+    //     // foreach ($depthTotal as $key => $value) {
+    //     //    if ($value['spros']<=0.95) {
+    //     //        $ball+=-1;
+    //     //    }elseif ($value['spros']>0.95 && $value['spros']<=1.3) {
+    //     //        $ball+= 0;
+    //     //    }elseif ($value['spros']>1.3 && $value['spros']<=2) {
+    //     //        $ball+= 1;
+    //     //    }elseif ($value['spros']>2) {
+    //     //        $ball+= 2;
+    //     //    }
+    //     // }
+    //     return  $ball;
+    // }
+
+
+
+    // //Определяем тренд
+    // public function trend($klines){
+    //     // echo date("Y-m-d H:i:s", $klines[0]['0']/1000), "<br/>";
+    //       $trend = $trendN = $trend_p = 0;
+    //       $g_trend = '';
+    //     foreach ($klines as $key => $value) {
+    //         if (1==bccomp($value[4], $value[1], 8)) {
+    //             $change = bcsub($value[4], $value[1], 8);
+    //             $Price_p = bcmul(bcdiv($change, $value[1], 8),100, 8);
+    //             $к = 'top';
+    //             $g_trend .= '+';
+    //         }
+
+    //         // if (0==bccomp($value[4], $value[1], 8)) {
+    //         //     $consolidation = 0;
+    //         //     $consolN++;
+    //         // }
+
+    //         if (-1==bccomp($value[4], $value[1], 8)) {
+    //             $change = bcsub($value[4], $value[1], 8);
+    //             $Price_p = bcmul(bcdiv($change, $value[1], 8),100, 8);
+    //             $к = 'bottom';
+    //             $g_trend .= '-';
+    //         }
+
+    //         if ($trend == $к || $trend=='') {
+    //             $trendN++;
+    //             $trend = $к;
+    //             $trend_p = bcadd($trend_p, $Price_p, 8);
+    //         }else{
+
+    //             break;
+    //         }
+
+
+    //     }
+
+    //     $result['trend_p'] = $trend_p;
+    //     $result['trend'] = $trend;
+    //     $result['count'] = $trendN;
+    //     $result['g_trend'] = strrev($g_trend);
+    //     return $result;
+    // }
+
+
     //*********************************************************************************************
 }

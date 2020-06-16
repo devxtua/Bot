@@ -53,8 +53,8 @@ class Strategies {
         $array['symbol'] = $POST['symbol'];
         $array['interval'] = $POST['interval'];
         $array['trading_limit'] = $POST['trading_limit'];
-        $array['coefficient_profit'] = $POST['coefficient_profit'];
-        $array['coefficient_stop_loss'] = $POST['coefficient_stop_loss'];
+        $array['BUY_OCO'] = $POST['BUY_OCO'];
+        $array['SELL_OCO'] = $POST['SELL_OCO'];
         foreach ($POST['indicator_arrey'] as $key => $value) {
             if (count($value) == 3) {
                 $array['indicator_arrey'][] = $value;
@@ -75,8 +75,8 @@ class Strategies {
         $array['symbol'] = $POST['symbol'];
         $array['interval'] = $POST['interval'];
         $array['trading_limit'] = $POST['trading_limit'];
-        $array['coefficient_profit'] = $POST['coefficient_profit'];
-        $array['coefficient_stop_loss'] = $POST['coefficient_stop_loss'];
+        $array['BUY_OCO'] = $POST['BUY_OCO'];
+        $array['SELL_OCO'] = $POST['SELL_OCO'];
         foreach ($POST['indicator_arrey'] as $key => $value) {
             if (count($value) == 3) {
                 $array['indicator_arrey'][] = $value;

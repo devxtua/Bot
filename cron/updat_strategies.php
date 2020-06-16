@@ -15,13 +15,18 @@
 
 
 
+
+
+
+
+
 	//********************************************************************
 	$duration = round(microtime(true) - $start, 4);
 	$mem = (memory_get_usage() - $mem_start)/1000000;
 	$user = $_GET['action'] == 'show'?'user':'cron openserver';
 
     $file_log = 'D:\binance\log_CRON.txt';
-	$log = Functions::readFile($file_log);
+	// $log = Functions::readFile($file_log);
     $log[] = ['user' => $user, 'time_start' => date("Y-m-d H:i:s", $start),'time_end' => date("Y-m-d H:i:s"), 'duration(minutes)'=> $duration, 'mem(Mbyte)'=> $mem];
 	Functions::saveFile($log, $file_log);
 

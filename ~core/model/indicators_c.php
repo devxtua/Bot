@@ -10,8 +10,8 @@ class Indicators{
 
    	//конструктор КЛАССА
     public function __construct(){
-            $this->symbol = $symbol;
-            $this->interval = $interval;
+            // $this->symbol = $symbol;
+            // $this->interval = $interval;
 
     }
     //деструктор КЛАССА
@@ -25,7 +25,11 @@ class Indicators{
 
     //****************************Аналитика**********************************************
     //определение средних значений в масиве 1000 klines
-    public function analytics_klines($interval){
+    public function analytics_klines($interval, $funded_klines = ''){
+        if ($klines != '') {
+            // $klines = $GLOBALS['Bin']->klines(array('symbol'=>$symbol, 'interval' => $interval, 'limit' => 1000));
+            $klines = $funded_klines;
+        }
         $klines = $this->klines;
     	$min =  $max = 0;
         foreach ($klines as $key => $value) {
@@ -120,38 +124,30 @@ class Indicators{
             $result += $this->indicator_klin_last_price($interval,  $klin);
             $result += $this->indicator_klines_last_down($interval, $klines);
             $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
+
         }
         // $result += $this->indicator_ticker24hr($symbol);
         return $result;
     }
      //Иникаторы клинов
-    public function all_klines_indicator(&$klines, $interval){
-            $result = [];
-            $klin = end($klines);
+    // public function all_klines_indicator(&$klines, $interval){
+    //         $result = [];
+    //         $klin = end($klines);
 
-            $result += $this->indicator_klin_Coefficient($interval,  $klin);
-            $result += $this->indicator_klin_Volume($interval,  $klin);
-            $result += $this->indicator_klin_Quote_asset_volume($interval,  $klin);
-            $result += $this->indicator_klin_Taker_buy_base_asset_volume($interval,  $klin);
-            $result += $this->indicator_klin_Taker_buy_quote_asset_volume($interval,  $klin);
-            $result += $this->indicator_klin_last_price($interval,  $klin);
-            $result += $this->indicator_klines_last_down($interval, $klines);
-            $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
-        return $result;
-    }
+    //         $result += $this->indicator_klin_Coefficient($interval,  $klin);
+    //         $result += $this->indicator_klin_Volume($interval,  $klin);
+    //         $result += $this->indicator_klin_Quote_asset_volume($interval,  $klin);
+    //         $result += $this->indicator_klin_Taker_buy_base_asset_volume($interval,  $klin);
+    //         $result += $this->indicator_klin_Taker_buy_quote_asset_volume($interval,  $klin);
+    //         $result += $this->indicator_klin_last_price($interval,  $klin);
+    //         $result += $this->indicator_klines_last_down($interval, $klines);
+    //         $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
+    //     return $result;
+    // }
 
     // ****************************Индикаторы источник klines **********************************************
 
-    //индикатор  Цена закрытия последней свечи
-    public function indicator_klin_last_price($interval, $klin){
-        $nickname = __FUNCTION__.'_'.$interval;
-        //Заносим даные в масив индикаторов
-         $this->indicator_arrey[$nickname] = ['title' => "Цена закрытия последней свечи (timeframe $interval)",
-                                                 'description' => "дает биржа" ];
-        //Определяем
-        $result[$nickname] = $klin[4];
-        return $result;
-    }
+
     //индикатор  кофициент свечи
     public function indicator_klin_Coefficient($interval, $klin){
         $nickname = __FUNCTION__.'_'.$interval;
@@ -170,7 +166,7 @@ class Indicators{
         $this->indicator_arrey[$nickname] = ['title' => "Volume  последней свечи (timeframe $interval)",
                                              'description' => "дает биржа" ];
         //Определяем
-        $result[$nickname] = $klin[5];
+        $result[$nickname] = round($klin[5], 2);
         return $result;
     }
 
@@ -181,7 +177,7 @@ class Indicators{
         $this->indicator_arrey[$nickname] = ['title' => "Quote_asset_volume  последней свечи (timeframe $interval)",
                                              'description' => "дает биржа" ];
         //Определяем
-        $result[$nickname]= $klin[7];
+        $result[$nickname]= round($klin[7], 2);
         return $result;
     }
 
@@ -192,7 +188,7 @@ class Indicators{
         $this->indicator_arrey[$nickname] = ['title' => "Taker_buy_quote_asset_volume последней свечи (timeframe $interval)",
                                              'description' => "дает биржа" ];
         //Определяем
-        $result[$nickname]= $klin[10];
+        $result[$nickname]= round($klin[10], 2);
         return $result;
     }
 
@@ -203,9 +199,30 @@ class Indicators{
         $this->indicator_arrey[$nickname] = ['title' => "Taker_buy_base_asset_volume последней свечи (timeframe $interval)",
                                              'description' => "дает биржа" ];
         //Определяем
-        $result[$nickname]= $klin[9];
+        $result[$nickname]= round($klin[9], 2);
         return $result;
     }
+
+        //индикатор  Цена закрытия последней свечи
+    public function indicator_klin_last_price($interval, $klin){
+        $nickname = __FUNCTION__.'_'.$interval;
+        //Заносим даные в масив индикаторов
+         $this->indicator_arrey[$nickname] = ['title' => "Цена закрытия последней свечи (timeframe $interval)",
+                                                 'description' => "дает биржа" ];
+        //Определяем
+        $result[$nickname] = $klin[4];
+        return $result;
+    }
+    //     //индикатор  base_asset_volume свечи $interval
+    // public function indicator_klin_price_min($interval,  $klin){
+    //     $nickname = __FUNCTION__.'_'.$interval;
+    //     //Заносим даные в масив индикаторов
+    //     $this->indicator_arrey[$nickname] = ['title' => "Цена  формирует минимум последней свечи  (timeframe $interval)",
+    //                                          'description' => "дает биржа" ];
+    //     //Определяем
+    //     $result[$nickname]= $klin[9];
+    //     return $result;
+    // }
 
     // 2 индикатора  last_down $interval
     public function indicator_klines_last_down($interval, &$klines){
@@ -223,6 +240,26 @@ class Indicators{
                                              'description' => "считаем последние свечи" ];
         //Определяем
         $result[$nickname_count] = $count;
+
+        //*************************
+        $nickname_coef = __FUNCTION__.'_coef_'.$interval;
+        //Заносим даные в масив индикаторов
+        $this->indicator_arrey[$nickname_coef] = ['title' => "Кофициент последних свечий в низ (timeframe $interval)",
+                                                    'description' => "считаем кофициент последних свечей" ];
+        //Определяем
+        $result[$nickname_coef] = $coef;
+
+        return $result;
+    }
+        // 2 индикатора  last_down $interval
+    public function indicator_klines_level_avg_3_klin($interval, &$klines){
+        $sum = $coef = 1;
+        for ($i=count($klines)-1; $i > 3; $i--) {
+            if (-1 != bccomp(bcdiv($klines[$i][4], $klines[$i][1], 8), 1, 8)) break;
+            $count ++;
+            $coef = bcdiv($klines[count($klines)-1][4], $klines[$i][1],  8);
+        }
+
 
         //*************************
         $nickname_coef = __FUNCTION__.'_coef_'.$interval;
@@ -254,6 +291,26 @@ class Indicators{
         $result[$nickname] = $count;
         return $result;
     }
+
+    //     // индикатора  количество последних свичей с обемом ниже среднего $interval
+    // public function indicator_klines_price_min_klin($interval, &$klines){
+    //     $array_column = array_column($klines, '5');
+    //     $count_klines = count($klines);
+    //     $avg = bcdiv(array_sum($array_column), $count_klines,  8);
+    //     $count = 0;
+    //     for ($i=count($klines)-2; $i > 0; $i--) {
+    //         if (-1 != bccomp($klines[$i][5], $avg, 8)) break;
+    //         $count ++;
+    //     }
+    //     //*************************
+    //     $nickname = __FUNCTION__.'_'.$interval;
+    //     //Заносим даные в масив индикаторов
+    //     $this->indicator_arrey[$nickname] = ['title' => "Количество последних свичей с volume ниже среднего (timeframe $interval)",
+    //                                          'description' => "анализ последних свечей(без последней)" ];
+    //     //Определяем
+    //     $result[$nickname] = $count;
+    //     return $result;
+    // }
 
     // ****************************Индикаторы источник ticker24hr ******************************************************
     //индикаторы  24hr_priceChangePercent
