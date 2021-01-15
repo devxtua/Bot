@@ -1,8 +1,8 @@
 <?php
-header('refresh: 1');
-// ini_set('error_reporting', E_ALL);
-// ini_set('display_errors', 1);
-// ini_set('display_startup_errors', 1);
+// header('refresh: 60');
+ini_set('error_reporting', E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 $start = $_SERVER['REQUEST_TIME'];
 $mem_start = memory_get_usage();
 //Определяем базове валют
@@ -10,14 +10,17 @@ $base['USDT']= array('minBalans'=>100, 'minPriceBuy'=>0.00000100);
 $base['BNB']= array('minBalans'=>1, 'minPriceBuy'=>0.00000100);
 
 // // базовое BUY_OCO
-// $BUY_OCO[0] = array('distance' => 0.1, 'Price' => 0.95, 'S_Price' => 1.001, 'SL_Price' => 1.005);
-$default_SELL_OCO = array('distance' => -0.5, 'Price' => 1.05, 'S_Price' => 0.995, 'SL_Price' => 0.98);
-$book_SELL_OCO = array( 'trading_limit'=> 12, 'distance' => -0.5, 'Price' => 1.05, 'S_Price' => 0.995, 'SL_Price' => 0.98);
 
-// //базовое SELL_OCO
-// $ticker_OCO[0] = array('distance' => '', 'Price' => 1.05, 'S_Price' => 0.995, 'SL_Price' => 0.98);
-// $ticker_OCO[1] = array('distance' => -1, 'Price' => 1.05, 'S_Price' => 0.99, 'SL_Price' => 0.98);
-// $ticker_OCO[2] = array('distance' => -1.5, 'Price' => 1.05, 'S_Price' => 0.99, 'SL_Price' => 0.98);
+
+$default_BUY_OCO = array('Distance' => 0.1, 'Price' => 0.95, 'S_Price' => 1.001, 'SL_Price' => 1.005);
+$default_SELL_OCO = array('Distance' => -0.25, 'Price' => 1.005, 'S_Price' => 0.999, 'SL_Price' => 0.98);
+
+
+$trading_limit = 12;
+$book_BUY_OCO = array( 'Distance' => 0.1, 'Price' => 0.95, 'S_Price' => 1.001, 'SL_Price' => 1.005);
+$book_SELL_OCO = array('Distance' => -0.1, 'Price' => 1.003, 'S_Price' => 0.9995, 'SL_Price' => 0.99);
+
+
 
 //биржа
 $exchange = 'binance';
@@ -34,8 +37,8 @@ require "../~core/model/user_c.php";
 $Users = new Users();
 $Bin = new Binance();
 $Indicators = new Indicators();
-
 $audio = false;
+
 
 foreach ($Users->user_arrey as $key => $user) {
 
@@ -66,12 +69,23 @@ foreach ($Users->user_arrey as $key => $user) {
                 $level_stopPrice = bcdiv(bcsub($order['stopPrice'], $ticker['bidPrice'],  8), $ticker['bidPrice'], 8)*100;
                 $SELL_OCO = $user[$exchange]['strategies'][$clientOrderId[0]]['SELL_OCO'];
 
-                if ($clientOrderId[2] == 1) $orderOPEN[$key]['status_stopPrice'] =  $level_stopPrice.' < '. $SELL_OCO[1]['Distance']. ' will be step '. $clientOrderId[2];
-                if (-1 == bccomp($level_stopPrice, $SELL_OCO[1]['Distance'], 8) && $clientOrderId[2] == 1)  $param = $SELL_OCO[1];
+
+                if ($clientOrderId[0] == 'book'){
+                    $orderOPEN[$key]['status_stopPrice'] =  $level_stopPrice.' < '. $book_SELL_OCO['Distance']. 'book step '. $clientOrderId[2];
+                    if (-1 == bccomp($level_stopPrice, $book_SELL_OCO['Distance'], 8))  $param = $book_SELL_OCO;
+                }elseif($clientOrderId[0] == 'default' || $clientOrderId[0] == 'web'){
+                    $orderOPEN[$key]['status_stopPrice'] =  $level_stopPrice.' < '. $default_SELL_OCO['Distance']. 'default will be step '. $clientOrderId[2];
+                    if (-1 == bccomp($level_stopPrice, $default_SELL_OCO['Distance'], 8))  $param = $default_SELL_OCO;
+                }else{
+                    if ($clientOrderId[2] == 1) $orderOPEN[$key]['status_stopPrice'] =  $level_stopPrice.' < '. $SELL_OCO[1]['Distance']. ' will be step '. $clientOrderId[2];
+                    if (-1 == bccomp($level_stopPrice, $SELL_OCO[1]['Distance'], 8) && $clientOrderId[2] == 1)  $param = $SELL_OCO[1];
 
 
-                if ($clientOrderId[2] > 1) $orderOPEN[$key]['status_stopPrice'] =  $level_stopPrice.' < '. $SELL_OCO[2]['Distance']. ' will be step '. $clientOrderId[2];
-                if (-1 == bccomp($level_stopPrice, $SELL_OCO[2]['Distance'], 8) && $clientOrderId[2] > 1 )  $param = $SELL_OCO[2];
+                    if ($clientOrderId[2] > 1) $orderOPEN[$key]['status_stopPrice'] =  $level_stopPrice.' < '. $SELL_OCO[2]['Distance']. ' will be step '. $clientOrderId[2];
+                    if (-1 == bccomp($level_stopPrice, $SELL_OCO[2]['Distance'], 8) && $clientOrderId[2] > 1 )  $param = $SELL_OCO[2];
+                }
+
+
 
                 if (empty($param)) continue;
                 if ($orderDELETE = $Bin->orderDELETE(array('symbol'=>$order['symbol'], 'orderId'=>$order['orderId']))){
@@ -205,278 +219,344 @@ foreach ($Users->user_arrey as $key => $user) {
     }
 
     //#####################################################################################################################################
-    //***** Контролируем скачки цены по bookTicker
-    //Читаем нужные файлы  и удаляем старые***********
-    $files = array_reverse(scandir($dir_bookTicker, 1));//сканируем директорию с файлами
-    // Functions::show($files);
+    // $testBUYfile = 'D:\binance\test\\'.$user['login'].'_testBUY.txt';
+    // if (!$testBUY =  Functions::readFile($testBUYfile)){
+    //     $testBUY = [];
+    // }
+    // //***** Контролируем скачки цены по bookTicker
+    // //Читаем нужные файлы  и удаляем старые***********
+    // $files = array_reverse(scandir($dir_bookTicker, 1));//сканируем директорию с файлами
+    // // Functions::show($files);
 
-    //*****ОТБИРАЕМ НУЖНЫЕ ФАЙЛЫ и смотрим возраст контрольных файлов
-    $time = time();
-    $today = getdate();
-    $historyBookTicker =[];
-    // Functions::show($today, 'filegetdate');
+    // //*****ОТБИРАЕМ НУЖНЫЕ ФАЙЛЫ и смотрим возраст контрольных файлов
+    // $time = time();
+    // $today = getdate();
+    // $historyBookTicker =[];
+    // // Functions::show($today, 'filegetdate');
 
-    foreach ($files as $key => $name) {
-        $file = $dir_bookTicker.$name;
-        if (!is_file($file)) continue;//проверяем существование файла
+    // foreach ($files as $key => $name) {
+    //     $file = $dir_bookTicker.$name;
+    //     if (!is_file($file)) continue;//проверяем существование файла
 
-        $filemtime = filemtime($file);
-        $filegetdate = getdate($filemtime);
-        // Functions::show($filemtime, 'filegetdate');
+    //     $filemtime = filemtime($file);
+    //     $filegetdate = getdate($filemtime);
+    //     // Functions::show($filemtime, 'filegetdate');
 
-        if ($time - $filemtime > 60*60*24*10) unlink($file);// удаляем ненужные более 10 дней
-                $bookTickerHis['type'] ='';
-
-
-        if ($today['minutes'] == $filegetdate['minutes'] && $today['hours'] == $filegetdate['hours'] && $today['mday'] == $filegetdate['mday']&&$today['wday'] == $filegetdate['wday']) { //выбераем даные за текущую менуту
-            if ($bookTickerHis =  Functions::readFile($file)){
-                $bookTickerHis['current'] = 'current';
-                $bookTickerHis['type'] = 'minutes';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif ($time - $filemtime < 60) {      //выбераем даные за 60 секунд
-            if ($bookTickerHis =  Functions::readFile($file)){
-                $bookTickerHis['current'] = '';
-                $bookTickerHis['type'] = 'minutes';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif(($key%10) == 0 && $today['hours'] == $filegetdate['hours'] && $today['mday'] == $filegetdate['mday'] && $today['wday'] == $filegetdate['wday']) {//даные текущий час
-            if ($bookTickerHis =  Functions::readFile($file)){
-                $bookTickerHis['current'] = 'current';
-                $bookTickerHis['type'] = 'hours';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif(($key%10) == 0 && $time - $filemtime < 60*60) {     //выбераем даные текущий последниие 60 мин
-            if ($bookTickerHis =  Functions::readFile($file)){
-                $bookTickerHis['current'] = '';
-                $bookTickerHis['type'] = 'hours';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif (($key%100) == 0 && $today['mday'] == $filegetdate['mday'] && $today['wday'] == $filegetdate['wday']) {   //выбераем даные за текущий день
-            if ($bookTickerHis = Functions::readFile($file)){
-                $bookTickerHis['current'] = 'current';
-                $bookTickerHis['type'] = 'mday';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif(($key%100) == 0 && $time - $filemtime < 60*60*24) {     //выбераем даные за последние 24 час
-            if ($bookTickerHis = Functions::readFile($file)){
-                $bookTickerHis['current'] = '';
-                $bookTickerHis['type'] = 'mday';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif ((($key)%500)==0 && $today['wday'] == $filegetdate['wday']) {   //выбераем даные за текущую неделю
-            if ($bookTickerHis = Functions::readFile($file)){
-                $bookTickerHis['current'] = 'current';
-                $bookTickerHis['type'] = 'wday';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }elseif ((($key)%500)==0 && $time - $filemtime > 60*60*24*7) {   //выбераем даные за последние 7 дней
-            if ($bookTickerHis = Functions::readFile($file)){
-                $bookTickerHis['current'] = '';
-                $bookTickerHis['type'] = 'mday';
-                $bookTickerHis['filemtime'] = $filemtime;
-                $historyBookTicker[] = $bookTickerHis;
-            }
-        }
-
-        // //смотрим возраст файлов
-        // if ($bookTickerHis['type'] !='') {
-        //   echo $bookTickerHis['type'], ' ', $bookTickerHis['current'], ' ', date("H:i:s", $filemtime), ' возраст: ', date("H:i:s", mktime(0, 0, $time - $filemtime)),  "<br/>";
-        // }
-    }
-    $arrey_symbols = [];
-    foreach ($bookTicker as $key => $ticker) {
-        //Получаем информацию о symbol
-        if (!$symbolInfo = Functions::multiSearch($Bin->exchangeInfo['symbols'], array('symbol' => $ticker['symbol'], 'status'=>'TRADING')))  continue;
-
-        // Исключаем если база не USDT
-        // if ($symbolInfo[0]['quoteAsset']!='USDT') continue;
-
-        $type = '';
-        $max = $min = 0;
-        foreach ($historyBookTicker as $keyHis => $bookTickerHis) {
-            if ($ticker['symbol'] != $bookTickerHis[$key]['symbol'] ) continue;
-            if ($keyHis == 0 || $type!= $bookTickerHis['type']) {
-
-                $type = $bookTickerHis['type'];
-                $max = $bookTickerHis[$key]['askPrice'];
-                $min = $bookTickerHis[$key]['askPrice'];
-
-                $symbol['symbol'] = $ticker['symbol'];
-                $symbol['*'.$bookTickerHis['type'].'*'] = 0;
-                $symbol['time_'.$bookTickerHis['type']] = $bookTickerHis['filemtime'];
-                $symbol['open_'.$bookTickerHis['type']] = $bookTickerHis[$key]['askPrice'];
-
-            }
-
-            // echo $ticker['symbol'], ' ', $bookTickerHis['type'], ' ', date("H:i:s", $bookTickerHis['filemtime']), "<br/>";
-
-            if ($bookTickerHis['type']=='wday') {
-                    //находим максимум
-                    if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $max = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['max_wday'] = $max;
-
-                    //находим минимут
-                    if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $min = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['min_wday'] = $min;
-                    $symbol['*'.$bookTickerHis['type'].'*']++;
-            }elseif($bookTickerHis['type']=='mday') {
-                    //находим максимум
-                    if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $max = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['max_mday'] = $max;
-
-                    //находим минимут
-                    if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $min = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['min_mday'] = $min;
-                    $symbol['*'.$bookTickerHis['type'].'*']++;
-            }elseif($bookTickerHis['type']=='hours') {
-                    //находим максимум
-                    if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $max = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['max_hours'] = $max;
-
-                    //находим минимут
-                    if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $min = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['min_hours'] = $min;
-                    $symbol['*'.$bookTickerHis['type'].'*']++;
-            }elseif($bookTickerHis['type']=='minutes') {
-                    //находим максимум
-                    if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $max = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['max_minutes'] = $max;
-
-                    //находим минимут
-                    if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
-                        $min = $bookTickerHis[$key]['askPrice'];
-                    }
-                    $symbol['min_minutes'] = $min;
-                    $symbol['*'.$bookTickerHis['type'].'*']++;
-            }
-        }
-        $symbol['***'] = '';
-        $symbol['volontil_h'] = bcdiv($symbol['max_hours'], $symbol['min_hours'], 4);
-
-        // $symbol['coef_wday'] = bcdiv($symbol['open_mday'], $symbol['open_wday'],  4);
-        $symbol['coef_mday'] = bcdiv($symbol['open_hours'], $symbol['open_mday'],  4);
-        $symbol['coef_hours'] = bcdiv($symbol['open_minutes'], $symbol['open_hours'],  4);
-        $symbol['coef_minutes'] = bcdiv($ticker['askPrice'], $symbol['open_minutes'],  4);
-
-        $symbol['askPrice'] = $ticker['askPrice'];
-        $symbol['bidPrice'] = $ticker['bidPrice'];
-
-        $symbol['spred_p'] = bcmul(bcdiv(bcsub($ticker['askPrice'], $ticker['bidPrice'], 8), $ticker['bidPrice'], 8), 100, 3);
-
-        $book = ['min_volontil_h'=>1.02,
-                'min_count_operation'=>500,
-                'max_spred_p'=>0.03,
-
-                'min_coef_wday'=> 0.9,
-                'min_coef_mday'=> 0.95,
-                'min_coef_hours'=> 0.99,
-                'min_coef_minutes'=> 0.997];
-
-        //**************************************************************************
-        $symbolticker24hr = Functions::multiSearch($Bin->ticker24hr, array('symbol' => $ticker['symbol']))[0];
-        if ($symbolticker24hr['count'] < $book['min_count_operation']) continue;// Исключаем с количеством операций (24 часа) меньше
-        if (1== bccomp($symbol['volontil_h'], $book['min_volontil_h'], 8))  continue; //условие минимальной волонтильности за последний час
-        if (in_array($ticker['symbol'], array_column($orderOPEN, 'symbol'))) continue; //условие есть открыт
-        if (1== bccomp((string)$symbol['spred_p'], $book['max_spred_p'], 8))  continue; //спред
+    //     if ($time - $filemtime > 60*60*24*10) unlink($file);// удаляем ненужные более 10 дней
+    //             $bookTickerHis['type'] ='';
 
 
-        // if (1== bccomp($symbol['coef_wday'], $book['min_coef_wday'], 8))  continue;  //условие кофициент нидели
-        // if (1== bccomp($symbol['coef_mday'], $book['min_coef_mday'], 8))  continue;  //условие кофициент дня
-        if (1== bccomp($symbol['coef_hours'], $book['min_coef_hours'], 8))  continue;  //условие кофициент часа
-        if (1== bccomp($symbol['coef_minutes'], $book['min_coef_minutes'], 8))  continue;  //условие кофициент минуты
+    //     if ($today['minutes'] == $filegetdate['minutes'] && $today['hours'] == $filegetdate['hours'] && $today['mday'] == $filegetdate['mday']&&$today['wday'] == $filegetdate['wday']) { //выбераем даные за текущую менуту
+    //         if ($bookTickerHis =  Functions::readFile($file)){
+    //             $bookTickerHis['current'] = 'current';
+    //             $bookTickerHis['type'] = 'minutes';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif ($time - $filemtime < 60) {      //выбераем даные за 60 секунд
+    //         if ($bookTickerHis =  Functions::readFile($file)){
+    //             $bookTickerHis['current'] = '';
+    //             $bookTickerHis['type'] = 'minutes';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif(($key%10) == 0 && $today['hours'] == $filegetdate['hours'] && $today['mday'] == $filegetdate['mday'] && $today['wday'] == $filegetdate['wday']) {//даные текущий час
+    //         if ($bookTickerHis =  Functions::readFile($file)){
+    //             $bookTickerHis['current'] = 'current';
+    //             $bookTickerHis['type'] = 'hours';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif(($key%10) == 0 && $time - $filemtime < 60*60) {     //выбераем даные текущий последниие 60 мин
+    //         if ($bookTickerHis =  Functions::readFile($file)){
+    //             $bookTickerHis['current'] = '';
+    //             $bookTickerHis['type'] = 'hours';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif (($key%500) == 0 && $today['mday'] == $filegetdate['mday'] && $today['wday'] == $filegetdate['wday']) {   //выбераем даные за текущий день
+    //         if ($bookTickerHis = Functions::readFile($file)){
+    //             $bookTickerHis['current'] = 'current';
+    //             $bookTickerHis['type'] = 'mday';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif(($key%500) == 0 && $time - $filemtime < 60*60*24) {     //выбераем даные за последние 24 час
+    //         if ($bookTickerHis = Functions::readFile($file)){
+    //             $bookTickerHis['current'] = '';
+    //             $bookTickerHis['type'] = 'mday';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif ((($key)%1500)==0 && $today['wday'] == $filegetdate['wday']) {   //выбераем даные за текущую неделю
+    //         if ($bookTickerHis = Functions::readFile($file)){
+    //             $bookTickerHis['current'] = 'current';
+    //             $bookTickerHis['type'] = 'wday';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }elseif ((($key)%1500)==0 && $time - $filemtime > 60*60*24*7) {   //выбераем даные за последние 7 дней
+    //         if ($bookTickerHis = Functions::readFile($file)){
+    //             $bookTickerHis['current'] = '';
+    //             $bookTickerHis['type'] = 'mday';
+    //             $bookTickerHis['filemtime'] = $filemtime;
+    //             $historyBookTicker[] = $bookTickerHis;
+    //         }
+    //     }
+
+    //     // //смотрим возраст файлов
+    //     // if ($bookTickerHis['type'] !='') {
+    //     //   echo $bookTickerHis['type'], ' ', $bookTickerHis['current'], ' ', date("H:i:s", $filemtime), ' возраст: ', date("H:i:s", mktime(0, 0, $time - $filemtime)),  "<br/>";
+    //     // }
+    // }
+    // $arrey_symbols = [];
+    // foreach ($bookTicker as $key => $ticker) {
 
 
-        // if (1 == bccomp($symbol['min_seconds'], $symbol['askPrice'], 8))  continue;
+    //     //Получаем информацию о symbol
+    //     if (!$symbolInfo = Functions::multiSearch($Bin->exchangeInfo['symbols'], array('symbol' => $ticker['symbol'], 'status'=>'TRADING')))  continue;
+
+    //     // Исключаем если база не USDT
+    //     if ($symbolInfo[0]['quoteAsset']!='USDT') continue;
 
 
 
-        //***************************************************************************
 
 
-        //ПОСМОТРЕТЬ
-        $arrey_symbols[] = $symbol;
 
-    }
+    //     $type = '';
+    //     $max = $min = 0;
+    //     foreach ($historyBookTicker as $keyHis => $bookTickerHis) {
+    //         if ($ticker['symbol'] != $bookTickerHis[$key]['symbol'] ) continue;
+    //         if ($keyHis == 0 || $type!= $bookTickerHis['type']) {
 
-    usort($arrey_symbols, function($a, $b) {
-         return abs($a['coef_minutes']*10000) - abs($b['coef_minutes']*10000);
-    });
-    $arrey_symbols = array_slice($arrey_symbols, 0, 10);
-    foreach ($arrey_symbols as $key => $value) {
+    //             $type = $bookTickerHis['type'];
+    //             $max = $bookTickerHis[$key]['askPrice'];
+    //             $min = $bookTickerHis[$key]['askPrice'];
 
-        $arrey_symbols[$key]['status_BUY'] = " BUY";
-        if (2==1){
-            if (!$symbolInfo = Functions::multiSearch($Bin->exchangeInfo['symbols'], array('symbol' => $value['symbol'], 'status'=>'TRADING')))  continue;
-            //Получаем курс BTC USD
-            $kurs = $Bin->kurs($symbolInfo['quoteAsset']);
-            $minQty = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'LOT_SIZE'))['0']['minQty'];
-            //параметры BUY LIMIT IOC
-            $Params_BUY = array('symbol'=>$strateg['symbol'],
-                                'side' => 'BUY',
-                                'type' => 'MARKET',
-                                'quantity' => $Bin->round_min(bcdiv($book_SELL_OCO['trading_limit'], bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $minQty),
-                                'timeInForce' => 'IOC',
-                                'newClientOrderId'=> 'book'.uniqid('_'));
-            //отправляем BUY ордер
-            if ($order = $Bin->orderNEW($Params_BUY)) {
-                //при успехе BUY выставляем ОСО ордера
-                if (0 != bccomp((string)$order['executedQty'], (string)0, 8)) {
-                    $priceBUY = bcdiv($order['cummulativeQuoteQty'], $order['executedQty'], 8);
-                    $minPrice = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'PRICE_FILTER'))['0']['minPrice'];
-                    //масив параметров SELL_OCO
-                    $Params_SELL_OCO = array('symbol'=>$strateg['symbol'],
-                                          'side' => 'SELL',
-                                          'quantity' => $order['executedQty'],
-                                          'price' => $Bin->round_min(bcmul($priceBUY, $book_SELL_OCO['Price'], 8), $minPrice),
-                                          'stopPrice' => $Bin->round_min(bcmul($priceBUY, $book_SELL_OCO['S_Price'], 8), $minPrice),
-                                          'stopLimitPrice' => $Bin->round_min(bcmul($priceBUY, $book_SELL_OCO['SL_Price'], 8), $minPrice),
-                                          'stopLimitTimeInForce' => 'GTC',
-                                          'listClientOrderId'  => 'book'.uniqid('_Sa').'_0',
-                                          'limitClientOrderId'  => 'book'.uniqid('_Sb').'_0',
-                                          'stopClientOrderId'  => 'book'.uniqid('_Sc').'_0');
-                    //отправляем SELL ОСО
-                    if ($orderOCO = $Bin->newOCO($Params_SELL_OCO)) {
-                        //LOG
-                    }
-                }
-            }
-        }
-    }
+    //             $symbol['symbol'] = $ticker['symbol'];
+    //             $symbol['*'.$bookTickerHis['type'].'*'] = 0;
+    //             $symbol['time_'.$bookTickerHis['type']] = $bookTickerHis['filemtime'];
+    //             $symbol['open_'.$bookTickerHis['type']] = $bookTickerHis[$key]['askPrice'];
+
+    //         }
+
+    //         // echo $ticker['symbol'], ' ', $bookTickerHis['type'], ' ', date("H:i:s", $bookTickerHis['filemtime']), "<br/>";
+
+    //         if ($bookTickerHis['type']=='wday') {
+    //                 //находим максимум
+    //                 if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $max = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['max_wday'] = $max;
+
+    //                 //находим минимут
+    //                 if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $min = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['min_wday'] = $min;
+    //                 $symbol['*'.$bookTickerHis['type'].'*']++;
+    //         }elseif($bookTickerHis['type']=='mday') {
+    //                 //находим максимум
+    //                 if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $max = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['max_mday'] = $max;
+
+    //                 //находим минимут
+    //                 if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $min = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['min_mday'] = $min;
+    //                 $symbol['*'.$bookTickerHis['type'].'*']++;
+    //         }elseif($bookTickerHis['type']=='hours') {
+    //                 //находим максимум
+    //                 if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $max = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['max_hours'] = $max;
+
+    //                 //находим минимут
+    //                 if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $min = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['min_hours'] = $min;
+    //                 $symbol['*'.$bookTickerHis['type'].'*']++;
+    //         }elseif($bookTickerHis['type']=='minutes') {
+    //                 //находим максимум
+    //                 if (-1 == bccomp((string)$max, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $max = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['max_minutes'] = $max;
+
+    //                 //находим минимут
+    //                 if (1 == bccomp((string)$min, (string)$bookTickerHis[$key]['askPrice'], 8)) {
+    //                     $min = $bookTickerHis[$key]['askPrice'];
+    //                 }
+    //                 $symbol['min_minutes'] = $min;
+    //                 $symbol['*'.$bookTickerHis['type'].'*']++;
+    //         }
+    //     }
+    //     $symbol['***'] = '';
+    //     $symbol['volontil_h'] = bcdiv($symbol['max_hours'], $symbol['min_hours'], 4);
+
+    //     // $symbol['coef_wday'] = bcdiv($symbol['open_mday'], $symbol['open_wday'],  4);
+    //     // $symbol['coef_mday'] = bcdiv($symbol['open_hours'], $symbol['open_mday'],  4);
+    //     // $symbol['coef_hours'] = bcdiv($symbol['open_minutes'], $symbol['open_hours'],  4);
+    //     // $symbol['coef_minutes'] = bcdiv($ticker['askPrice'], $symbol['open_minutes'],  4);
+
+    //     $symbol['askPrice'] = $ticker['askPrice'];
+    //     $symbol['bidPrice'] = $ticker['bidPrice'];
+
+    //     $symbol['spred_p'] = bcmul(bcdiv(bcsub($ticker['askPrice'], $ticker['bidPrice'], 8), $ticker['bidPrice'], 8), 100, 3);
+
+
+
+
+
+
+    //     $book = ['min_volontil_h'=>1.005,
+    //             'min_count_operation'=>500,
+    //             'max_spred_p'=>0.05,
+    //             'max_count_order'=>20,
+    //             'next_order_Price_BUY'=>-0.001,
+
+    //             'min_coef_wday'=> 0.9,
+    //             'min_coef_mday'=> 0.93,
+    //             'min_coef_hours'=> 0.995,
+    //             'min_coef_minutes'=> 1.001];
+
+    //     //**************************************************************************
+    //     //проверяем тестовые закупки
+    //     if ($bookSymbolOpen = Functions::multiSearch($testBUY, array('symbol' => $ticker['symbol'], 'status'=>''))){
+    //         // Functions::showArrayTable(max($bookSymbolOpen), 'testBUY');
+    //         Functions::test_check_book_OCO($testBUY, $ticker);
+    //         $lastBUY = max($bookSymbolOpen)['Price_BUY'];
+    //     }else{
+    //         $lastBUY = $symbol['askPrice'];
+    //     }
+
+    //     $symbolticker24hr = Functions::multiSearch($Bin->ticker24hr, array('symbol' => $ticker['symbol']))[0];
+    //     // Исключаем с количеством операций (24 часа) меньше
+    //     if ($symbolticker24hr['count'] < $book['min_count_operation']) continue;
+
+    //     //условие минимальной волонтильности за последний час
+    //     // if (-1== bccomp($symbol['volontil_h'], $book['min_volontil_h'], 8))  continue;
+
+    //     //условие есть открыт
+    //     if (in_array($ticker['symbol'], array_column($orderOPEN, 'symbol'))) continue;
+
+    //     //спред
+    //     // if (1== bccomp((string)$symbol['spred_p'], $book['max_spred_p'], 8))  continue;
+
+    //     //цена нового ниже последнего открытого
+    //     // if (1 == bccomp(bcdiv($symbol['askPrice'], $lastBUY, 8), $book['next_order_Price_BUY'], 8) ) continue;
+
+    //     //максимальное количество открытыхe
+    //     if (count($bookSymbolOpen) >= $book['max_count_order']) continue;
+
+
+    //     // if (1== bccomp($symbol['coef_wday'], $book['min_coef_wday'], 8))  continue;  //условие кофициент нидели
+    //     // if (1== bccomp($symbol['coef_mday'], $book['min_coef_mday'], 8))  continue;  //условие кофициент дня
+    //     // if (1== bccomp($symbol['coef_hours'], $book['min_coef_hours'], 8))  continue;  //условие кофициент часа
+    //     // if (-1== bccomp($symbol['coef_minutes'], $book['min_coef_minutes'], 8))  continue;  //условие кофициент минуты
+
+
+    //     // if (1 == bccomp($symbol['min_seconds'], $symbol['askPrice'], 8))  continue;
+
+    //     if ($ticker['symbol'] != 'ETHUSDT')  continue;
+
+    //      $arrey_symbols[] = $symbol;
+    //     Functions::showArrayTable($arrey_symbols, 'arrey_symbols');
+
+    //     Functions::test_book_OCO($testBUY, $symbol, $trading_limit, $book_SELL_OCO);
+    //     //***************************************************************************
+    //     //ПОСМОТРЕТЬ
+    // }
+
+    // usort($arrey_symbols, function($a, $b) {
+    //      return abs($a['coef_hours']*10000) - abs($b['coef_hours']*10000);
+    // });
+    // $arrey_symbols = array_slice($arrey_symbols, 0, 0);
+    // foreach ($arrey_symbols as $key => $value) {
+    //     if (!$symbolInfo = Functions::multiSearch($Bin->exchangeInfo['symbols'], array('symbol' => $value['symbol'], 'status'=>'TRADING')))  continue;
+    //     //Получаем курс BTC USD
+    //     $kurs = $Bin->kurs($symbolInfo[0]['quoteAsset']);
+
+
+
+
+
+    //     $arrey_symbols[$key]['status_BUY'] = " BUY";
+    //     if (2==1){
+    //         //Получаем курс BTC USD
+    //         $kurs = $Bin->kurs($symbolInfo['quoteAsset']);
+    //         $minQty = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'LOT_SIZE'))['0']['minQty'];
+    //         //параметры BUY LIMIT IOC
+    //         $Params_BUY = array('symbol'=>$strateg['symbol'],
+    //                             'side' => 'BUY',
+    //                             'type' => 'MARKET',
+    //                             'quantity' => $Bin->round_min(bcdiv($trading_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $minQty),
+    //                             'timeInForce' => 'IOC',
+    //                             'newClientOrderId'=> 'book'.uniqid('_'));
+    //         //отправляем BUY ордер
+    //         if ($order = $Bin->orderNEW($Params_BUY)) {
+    //             //при успехе BUY выставляем ОСО ордера
+    //             if (0 != bccomp((string)$order['executedQty'], (string)0, 8)) {
+    //                 $priceBUY = bcdiv($order['cummulativeQuoteQty'], $order['executedQty'], 8);
+    //                 $minPrice = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'PRICE_FILTER'))['0']['minPrice'];
+    //                 //масив параметров SELL_OCO
+    //                 $Params_SELL_OCO = array('symbol'=>$value['symbol'],
+    //                                       'side' => 'SELL',
+    //                                       'quantity' => $order['executedQty'],
+    //                                       'price' => $Bin->round_min(bcmul($priceBUY, $book_SELL_OCO['Price'], 8), $minPrice),
+    //                                       'stopPrice' => $Bin->round_min(bcmul($priceBUY, $book_SELL_OCO['S_Price'], 8), $minPrice),
+    //                                       'stopLimitPrice' => $Bin->round_min(bcmul($priceBUY, $book_SELL_OCO['SL_Price'], 8), $minPrice),
+    //                                       'stopLimitTimeInForce' => 'GTC',
+    //                                       'listClientOrderId'  => 'book'.uniqid('_Sa').'_0',
+    //                                       'limitClientOrderId'  => 'book'.uniqid('_Sb').'_0',
+    //                                       'stopClientOrderId'  => 'book'.uniqid('_Sc').'_0');
+    //                 //отправляем SELL ОСО
+    //                 if ($orderOCO = $Bin->newOCO($Params_SELL_OCO)) {
+    //                     //LOG
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     //если выставляем ОСО закупки
+    //     if (4==1) {
+    //         $minQty = Functions::multiSearch($symbolInfo[0]['filters'], array('filterType' => 'LOT_SIZE'))['0']['minQty'];
+    //         $minPrice = Functions::multiSearch($symbolInfo[0]['filters'], array('filterType' => 'PRICE_FILTER'))['0']['minPrice'];
+    //         //масив параметров SELL_OCO
+    //         $Params_BUY_OCO = array('symbol'=>$value['symbol'],
+    //                                     'side' => 'BUY',
+    //                                     'quantity' => $Bin->round_min(bcdiv($trading_limit, bcmul($value['askPrice'], $kurs['kursUSD'], 8), 8), $minQty),
+    //                                     'price' => $Bin->round_min(bcmul($value['askPrice'], $book_BUY_OCO['Price'], 8), $minPrice),
+    //                                     'stopPrice' => $Bin->round_min(bcmul($value['askPrice'], $book_BUY_OCO['S_Price'], 8), $minPrice),
+    //                                     'stopLimitPrice' => $Bin->round_min(bcmul($value['askPrice'], $book_BUY_OCO['SL_Price'], 8), $minPrice),
+    //                                     'stopLimitTimeInForce' => 'GTC',
+    //                                     'listClientOrderId'  => 'book'.uniqid('_Sa').'_0',
+    //                                     'limitClientOrderId'  => 'book'.uniqid('_Sb').'_0',
+    //                                     'stopClientOrderId'  => 'book'.uniqid('_Sc').'_0');
+    //         Functions::show($Params_BUY_OCO, $value['askPrice']);
+    //         if ($orderOCO = $Bin->newOCO($Params_BUY_OCO)) {
+    //             //LOG
+    //         }
+    //     }
+    // }
+
+    // //сохраняем тестовые закупки
+    // Functions::saveFile($testBUY, $testBUYfile);
     //######################################################################################################################################
     //
     //***** проверяем наличие стратегий  (если нет пропускаем)
     if (count($user[$exchange]['strategies'])==0) goto end;
 
-    //Сортируем стратегии по symbols intervals
-    $strategies = &$user[$exchange]['strategies'];
-    $symbols  = array_column($strategies, 'symbol');
-    $intervals = array_column($strategies, 'interval');
-    array_multisort($symbols, SORT_ASC, $intervals, SORT_DESC, $strategies);
-
     //***** проверяем стратегии на покупку
+    $last_strateg = [];
     foreach ($strategies as $key => &$strateg) {
+        if ($strateg['status']=='OFF') continue; //Исключаем отключеные стратегии
 
         $strateg['status_indicator'] = '';
         $strateg['status_BUY'] = '';
@@ -499,8 +579,10 @@ foreach ($Users->user_arrey as $key => $user) {
                         $openStrateg ++;
                     }
                 }
+
+                 // $lastBUY = max($orderOPEN)['Price_BUY'];
                 $strateg['open'] = $openStrateg;
-                if ($openStrateg >= 2) continue;                 //открытых по стратегии неболее 2
+                if ($openStrateg >= 3) continue; //открытых по стратегии неболее 1
                 //проверяем общее число max_ALGO
                     $max_ALGO = Functions::multiSearch($symbolInfo['filters'], array('filterType' => 'MAX_NUM_ALGO_ORDERS'))['0']['maxNumAlgoOrders'];
                     $algo_orders = count(array_unique(array_column($open, 'orderListId')))+1;
@@ -512,7 +594,7 @@ foreach ($Users->user_arrey as $key => $user) {
             }
         }
 
-        if ($strateg['status']=='OFF') continue;        //Исключаем отключеные стратегии
+
 
 
         //Получаем курс BTC USD
@@ -526,8 +608,8 @@ foreach ($Users->user_arrey as $key => $user) {
 
 
         //Проверяем индикаторы стратегии
-        $control = count($strateg['indicator_arrey']);
-        $yes = 0;
+        $control = count($strateg['indicator_arrey']); //всего индикаторов
+        $yes = 0; //выполнено условий
         //Проверяем индикаторы и плюсуем подтверждение
         foreach ($strateg['indicator_arrey'] as $key=> $indicator) {
             $yes += Functions::comparison_indicator($all_indicator[$indicator['indicator']], $indicator['operator'], $indicator['value']);
@@ -570,7 +652,7 @@ foreach ($Users->user_arrey as $key => $user) {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Отправка контрольной SMS
     $getdate = getdate();
-    if (in_array($getdate['hours'], [180000]) && $getdate['minutes'] == 0 && $getdate['seconds'] < 15) {
+    if (in_array($getdate['hours'], [17,18]) && $getdate['minutes'] == 0 && $getdate['seconds'] < 15) {
         require "./~core/model/apisms_c.php";
         $sms .= 'Open '.count($orderOPEN). ' Balance '.round(array_sum(array_column($accountBalance, 'total_USD')),2);
         $ApiSMS = new APISMS('843e5bec02b4c36e0202d4a0cf227eaa', 'd9c9f37cc5b86d4368da4cd7b3781a27', 'http://atompark.com/api/sms/', false);
@@ -588,11 +670,11 @@ foreach ($Users->user_arrey as $key => $user) {
     if ($_GET['action'] == 'show'){
         echo '<link rel="stylesheet" href="../html/css/style.css">';
         // echo '<script type="text/javascript" src="../html/script/script_bot.js"></script>';
-        if (count($arrey_symbols)>0 && $audio == false) {
-            $audio = true;
-            echo'<audio autoplay><source src="sirena.mp3"></audio>';
-            Functions::showArrayTable($arrey_symbols, 'bookTickerHis отобрал'.count($arrey_symbols));
-        }
+        // if (count($arrey_symbols)>0 && $audio == false) {
+        //     $audio = true;
+        //     // echo'<audio autoplay><source src="sirena.mp3"></audio>';
+        //     Functions::showArrayTable($arrey_symbols, 'bookTickerHis отобрал'.count($arrey_symbols));
+        // }
 
         echo '<div style="text-align: right; background: #fc0;">', '  <font size="20" color=blue face="Arial">', date("H:i:s", time()), '</font></div>';
         echo $user['login'], ' баланс: <font size="10" color="green" face="Arial">', round(array_sum(array_column($accountBalance, 'total_USD')),2),  '</font>$<br/>';
@@ -600,10 +682,12 @@ foreach ($Users->user_arrey as $key => $user) {
         Functions::showArrayTable($accountBalance, 'accountBalance');
         Functions::showArrayTable($user[$exchange]['strategies'], "СТРАТЕГИИ ");
         Functions::showArrayTable($orderOPEN, 'OPEN order');
+        Functions::showArrayTable($testBUY, 'testBUY');
+
         //Время выполнения скрипта:
         echo 'Время выполнения скрипта: ', round(microtime(true) - $start, 4), ' сек.<br/>';
         echo 'Обем памяти: ', (memory_get_usage() - $mem_start)/1000000, ' мегабайта.<br/><br/><br/><br/>';
-        // sleep(2);
+        sleep(3);
     }
 }
 ?>

@@ -19,10 +19,6 @@ class Indicators{
     }
 
 
-
-
-
-
     //****************************Аналитика**********************************************
     //определение средних значений в масиве 1000 klines
     public function analytics_klines($interval, $funded_klines = ''){
@@ -122,6 +118,7 @@ class Indicators{
             $result += $this->indicator_klin_Taker_buy_base_asset_volume($interval,  $klin);
             $result += $this->indicator_klin_Taker_buy_quote_asset_volume($interval,  $klin);
             $result += $this->indicator_klin_last_price($interval,  $klin);
+            $result += $this->indicator_klines_last_up($interval, $klines);
             $result += $this->indicator_klines_last_down($interval, $klines);
             $result += $this->indicator_klines_last_volume_below_avg($interval, $klines);
 
@@ -245,6 +242,33 @@ class Indicators{
         $nickname_coef = __FUNCTION__.'_coef_'.$interval;
         //Заносим даные в масив индикаторов
         $this->indicator_arrey[$nickname_coef] = ['title' => "Кофициент последних свечий в низ (timeframe $interval)",
+                                                    'description' => "считаем кофициент последних свечей" ];
+        //Определяем
+        $result[$nickname_coef] = $coef;
+
+        return $result;
+    }
+        // 2 индикатора  last_up $interval
+    public function indicator_klines_last_up($interval, &$klines){
+        $count = 0;
+        $coef = 1;
+        for ($i=count($klines)-1; $i > 0; $i--) {
+            if (1 != bccomp(bcdiv($klines[$i][4], $klines[$i][1], 8), 1, 8)) break;
+            $count ++;
+            $coef = bcdiv($klines[count($klines)-1][4], $klines[$i][1],  8);
+        }
+        //*************************
+        $nickname_count = __FUNCTION__.'_count_'.$interval;
+        //Заносим даные в масив индикаторов
+        $this->indicator_arrey[$nickname_count] = ['title' => "Количество последних свечий в верх (timeframe $interval)",
+                                             'description' => "считаем последние свечи" ];
+        //Определяем
+        $result[$nickname_count] = $count;
+
+        //*************************
+        $nickname_coef = __FUNCTION__.'_coef_'.$interval;
+        //Заносим даные в масив индикаторов
+        $this->indicator_arrey[$nickname_coef] = ['title' => "Кофициент последних свечий в верх (timeframe $interval)",
                                                     'description' => "считаем кофициент последних свечей" ];
         //Определяем
         $result[$nickname_coef] = $coef;

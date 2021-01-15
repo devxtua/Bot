@@ -299,87 +299,87 @@ foreach ($ticker24hr as $key => $value) {//начало цикла 1
 //=================================================================================================
 
 
-        //   $temp = $t =array();
-        //   foreach (array_reverse($IntervalControl) as $key => $interval) {
+          $temp = $t =array();
+          foreach (array_reverse($IntervalControl) as $key => $interval) {
 
-        //         if ($klines = array_reverse($Bin->klines(array('symbol'=>$value['symbol'], 'interval' => $interval)))) {
-        //           // $Bin->showArrayTable($klines);
+                if ($klines = array_reverse($Bin->klines(array('symbol'=>$value['symbol'], 'interval' => $interval)))) {
+                  // $Bin->showArrayTable($klines);
 
-        //            $temp0 = $tt = array();
+                   $temp0 = $tt = array();
 
-        //           //устанавливаем сколько свечей анализируем если они есть
-        //           $k_n = 5;
-        //           $N = count($klines)<$k_n?count($klines):$k_n;
-        //           $klines = array_slice($klines, 0, $k_n);
-        //           $Bin->showArrayTable($klines);
-        //           if ($trend = array_reverse($Bin->trend($klines))) {
-        //             // echo $interval, "<br/>";
-        //             // $Bin->show($trend);
-        //           }
-
-
-
-        //           for ($i=0; $i < $N; $i++) {
-        //               $tt['symbol'] = $value['symbol'];
-        //               $tt['asset']=$symbolInfo[0]['baseAsset'];
-        //               $tt['base']=$symbolInfo[0]['quoteAsset'];
-        //               $tt['interval'] = $interval;
-        //               // $today = getdate($filemtime);
-        //               $tt['dateOpen'] = date("Y-m-d H:i:s", $klines[$i][0]/1000);
-        //               $tt['Open'] =  $klines[$i][1];
-        //               $tt['High'] = $klines[$i][2];
-        //               $tt['Low'] = $klines[$i][3];
-        //               $tt['Close'] = $klines[$i][4];
-        //               $tt['Volume'] = $klines[$i][5];
-        //               $tt['dateClose'] = date("Y-m-d H:i:s", $klines[$i][6]/1000);
-
-        //               $tt['*.*'] = '----';
-
-        //               //отбераем последний период
-        //               if ($i==0) {
-        //                   //находим изминения последней свечи
-        //                   $Open_Close = bcsub($klines[0][4], $klines[$i][1], 8);
-        //                   $tt['Open_Close_p'] = bcmul(bcdiv($Open_Close, $klines[$i][1], 8), 100, 8);
-
-        //                   //находим процент увеличения цены от минимальной
-        //                   $High_Close = bcsub($klines[$i][4], $klines[$i][2], 8);
-        //                   $tt['High_Close_p_⇓'] =  bcmul(bcdiv($High_Close, $klines[$i][2], 8),100, 8);
+                  //устанавливаем сколько свечей анализируем если они есть
+                  $k_n = 5;
+                  $N = count($klines)<$k_n?count($klines):$k_n;
+                  $klines = array_slice($klines, 0, $k_n);
+                  $Bin->showArrayTable($klines);
+                  if ($trend = array_reverse($Bin->trend($klines))) {
+                    // echo $interval, "<br/>";
+                    // $Bin->show($trend);
+                  }
 
 
-        //                   $Low_Close = bcsub($klines[$i][4], $klines[$i][3], 8);
-        //                   $tt['Low_Close_p_⇑'] = bcmul(bcdiv($Low_Close, $klines[$i][3], 8),100, 8);
 
-        //                   $tt += $trend;
-        //                   $temp[]=$tt;
-        //               }
+                  for ($i=0; $i < $N; $i++) {
+                      $tt['symbol'] = $value['symbol'];
+                      $tt['asset']=$symbolInfo[0]['baseAsset'];
+                      $tt['base']=$symbolInfo[0]['quoteAsset'];
+                      $tt['interval'] = $interval;
+                      // $today = getdate($filemtime);
+                      $tt['dateOpen'] = date("Y-m-d H:i:s", $klines[$i][0]/1000);
+                      $tt['Open'] =  $klines[$i][1];
+                      $tt['High'] = $klines[$i][2];
+                      $tt['Low'] = $klines[$i][3];
+                      $tt['Close'] = $klines[$i][4];
+                      $tt['Volume'] = $klines[$i][5];
+                      $tt['dateClose'] = date("Y-m-d H:i:s", $klines[$i][6]/1000);
 
-        //               $tt['*..*'] = '----';
+                      $tt['*.*'] = '----';
 
-        //               // $MaxMin = bcsub($klines[$i][2], $klines[$i][3], 8);
-        //               // $tt['MaxMin_p'] =  bcmul(bcdiv($MaxMin, $klines[$i][3], 8),100, 8);
+                      //отбераем последний период
+                      if ($i==0) {
+                          //находим изминения последней свечи
+                          $Open_Close = bcsub($klines[0][4], $klines[$i][1], 8);
+                          $tt['Open_Close_p'] = bcmul(bcdiv($Open_Close, $klines[$i][1], 8), 100, 8);
 
-        //               // //находим процент увеличения цены от минимальной
-        //               // $top = bcsub($klines[0][4], $klines[$i][3], 8);
-        //               // $tt['min_p_⇑'] = bcmul(bcdiv($top, $klines[$i][3], 8),100, 8);
-
-        //               // $tt['*...*'] = '----';
-        //               //находим процент увеличения цены от минимальной
-
-
-        //               // $temp0[]=$tt;
+                          //находим процент увеличения цены от минимальной
+                          $High_Close = bcsub($klines[$i][4], $klines[$i][2], 8);
+                          $tt['High_Close_p_⇓'] =  bcmul(bcdiv($High_Close, $klines[$i][2], 8),100, 8);
 
 
-        //           }
-        //         // $Bin->showArrayTable($temp0);
+                          $Low_Close = bcsub($klines[$i][4], $klines[$i][3], 8);
+                          $tt['Low_Close_p_⇑'] = bcmul(bcdiv($Low_Close, $klines[$i][3], 8),100, 8);
 
-        //         }
-        //     // }else{
-        //     //   // $klines_max_min  = $historyKlines[$value['symbol']]['klines_max_min'];
-        //     // }
-        //     // $temp[]=$t;
-        //   }
-        // echo "Последние свечи<br/>";
-        // $Bin->showArrayTable($temp);
+                          $tt += $trend;
+                          $temp[]=$tt;
+                      }
+
+                      $tt['*..*'] = '----';
+
+                      // $MaxMin = bcsub($klines[$i][2], $klines[$i][3], 8);
+                      // $tt['MaxMin_p'] =  bcmul(bcdiv($MaxMin, $klines[$i][3], 8),100, 8);
+
+                      // //находим процент увеличения цены от минимальной
+                      // $top = bcsub($klines[0][4], $klines[$i][3], 8);
+                      // $tt['min_p_⇑'] = bcmul(bcdiv($top, $klines[$i][3], 8),100, 8);
+
+                      // $tt['*...*'] = '----';
+                      //находим процент увеличения цены от минимальной
+
+
+                      // $temp0[]=$tt;
+
+
+                  }
+                // $Bin->showArrayTable($temp0);
+
+                }
+            // }else{
+            //   // $klines_max_min  = $historyKlines[$value['symbol']]['klines_max_min'];
+            // }
+            // $temp[]=$t;
+          }
+        echo "Последние свечи<br/>";
+        $Bin->showArrayTable($temp);
 
     //****************************
         $symbol = array();

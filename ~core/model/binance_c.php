@@ -14,6 +14,8 @@ class Binance{
     private $fileexchangeInfo = 'D:\binance\exchangeInfo.txt';
     private $fileticker24hr = 'D:\binance\ticker24hr.txt';
 
+
+
     public $tradeFeeKom = array();
     public $exchangeInfo = array();
     public $ticker24hr = array();
@@ -32,14 +34,23 @@ class Binance{
         }
         if ($this->exchangeInfo = Functions::readFile($this->fileexchangeInfo)) {
         }
+        if ($this->exchangeInfo = Functions::readFile($this->fileexchangeInfo)) {
+        }
 
         //Сверяем время API и
+
         $timestamp = $this->timestamp();
-        if ($this->time()['serverTime'] - $timestamp < -1000) {
-            echo 'host : ', $this->timestamp(),"<br/>";
-            echo 'api  : ', $this->time()['serverTime'],"<br/>";
-            echo 'difference: ', $this->time()['serverTime'] - $timestamp,"<br/>";
+        $serverTime = $this->time()['serverTime'];
+
+
+
+
+        if ($serverTime - $timestamp < -1000) {
+            echo 'host : ', $timestamp, ' ',date("Y-m-d H:i:s", $timestamp/1000), "<br/>";
+            echo 'api  : ', $serverTime, ' ',date("Y-m-d H:i:s", $serverTime/1000), "<br/>";
+            echo 'difference: ', $serverTime - $timestamp,"<br/>";
             die(' КОНСТРУКТОР STOP');
+            sleep(2);
         }
         // // Проверяем торговый статус API аккаунта
         // if ($apiTradingStatus= $this->apiTradingStatus(array())) {
@@ -52,7 +63,7 @@ class Binance{
     public function __destruct(){
     }
 
-    //конструктор КЛАССА
+    //инициализация КЛАССА
     public function initialization($KEY = '', $SEC = '', $Proxy = ''){
         $this->KEY = $KEY;
         $this->SEC = $SEC;
@@ -90,7 +101,7 @@ class Binance{
             if ($this->exchangeInfo = Functions::readFile($this->fileexchangeInfo)) {
             }
         }
-        // $GLOBALS['tradeFeeKom'] = &$this->tradeFeeKom;
+        $GLOBALS['tradeFeeKom'] = &$this->tradeFeeKom;
         // $GLOBALS['exchangeInfo'] = &$this->exchangeInfo;
         // // $GLOBALS['ticker24hr'] = &$this->ticker24hr;
         $GLOBALS['Bin'] = &$this;
@@ -117,7 +128,7 @@ class Binance{
             CURLOPT_SSL_VERIFYHOST=> 2
         );
         //устанавливаем настройки proxy
-        if (isset($this->Proxy)) {
+        if (isset($this->Proxy)  && $this->Proxy != '') {
             $array_curl[CURLOPT_PROXY] = $Proxy['ip'];             // Прокси, через который будут направляться запросы
             $array_curl[CURLOPT_PROXYUSERPWD] = $Proxy['proxyauth'];  // Пароль логин proxy
             $array_curl[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;        // Вид прокси
@@ -332,6 +343,41 @@ class Binance{
             $startTime = $end;
         }
         return $funded;
+    }
+    //получаем ордера от указаной даты
+    public function history_orders_symbol($strateg, $filehistory){
+        if (is_file($filehistory)){
+            $symbolAllOrders =  Functions::readFile($filehistory);
+            // $startTime = max($symbolAllOrders)['time'];
+            $startTime = $strateg['histori_time'];
+        }else{
+            $symbolAllOrders = [];
+            $startTime = $strateg['histori_time'];
+        }
+        $endTime = time()*1000;
+        foreach ($symbolAllOrders as $key => $Orders) {
+            if ($Orders['status'] == 'NEW'){
+                unset($symbolAllOrders[$key]);
+            }
+        }
+        do{
+            if ($allOrders = $this->allOrders(array('symbol'=>$strateg['symbol'], 'startTime'=>$startTime, 'limit'=>1000))){
+                foreach ($allOrders as $key => $value) {
+                    if (count($symbolAllOrders)>0) {
+                        $orderId = array_column($symbolAllOrders, 'orderId');
+                        if (!in_array($value['orderId'], $orderId)) {
+                            $symbolAllOrders[] = $value;
+                        }
+                    }else{
+                        $symbolAllOrders = $allOrders;
+                    }
+                }
+                $startTime = max($allOrders)['time'];
+            }
+        }while (count($allOrders)>999);
+
+        Functions::saveFile($symbolAllOrders, $filehistory);
+        return $symbolAllOrders;
     }
 
     //*********************************** ОБЩЕЕ ****************************************

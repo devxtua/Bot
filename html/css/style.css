@@ -59,18 +59,21 @@ body {
   }
 }
 
-
+tr.strok {
+	background-color: #efefe9;
+}
 tr.marked {
 	background-color: #cfc;
 }
-/*tr.srok {
-	background-color: #efefe9;
-}*/
 
-tr:hover {
-    background: #f90;
-    color:  #fff;
+td.marked {
+	background-color: #6f6;
 }
 
+tr:hover {
+    background: #ffcf00;
+    /*color:  #fff;*/
+}
 
+.none {display: none; }
 

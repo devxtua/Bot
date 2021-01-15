@@ -1,5 +1,5 @@
 <?php
-$start = microtime(true);  
+$start = microtime(true);
 //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 echo "BUCKS 500$/dey ПРОДАЖА <br/>";
 
@@ -15,9 +15,9 @@ $settings['orderBUY'] = $orderBUY = 0;
 
 
 //минимальное количество сделок за 24 час
-$settings['countTrends'] = $countTrends= 1000; 
+$settings['countTrends'] = $countTrends= 1000;
 // максимальный % изминения цены за 24 час
-$settings['priceChangePercent'] = $priceChangePercent= 5; 
+$settings['priceChangePercent'] = $priceChangePercent= 5;
 
 
 //стартовый лимит закупки
@@ -66,7 +66,7 @@ header('refresh: 1');
 ini_set('max_execution_time', 1000);    //  одно и тоже что set_time_limit(6000);
 // echo "max_execution_time ", ini_get('max_execution_time'), "<br />";
 
-// ob_implicit_flush(1);     
+// ob_implicit_flush(1);
 // ob_start();
 // ob_get_contents();
 // ob_get_clean();
@@ -91,7 +91,7 @@ $filarchiveorderSELL = 'E:\binance\archiveorderSELL_'.date("m.d.y").'.txt';
 
 $sum =$n= 0;
 $archivassetSum = $assetBUN =array();
-if ($archiveorderSELL = $Bin->readFile($filarchiveorderSELL)) { 
+if ($archiveorderSELL = $Bin->readFile($filarchiveorderSELL)) {
     array_reverse($archiveorderSELL);
     // $asset = array();
     // foreach ($archiveorderSELL as $key => $value) {
@@ -117,7 +117,7 @@ if ($archiveorderSELL = $Bin->readFile($filarchiveorderSELL)) {
     //             $nasset++;
     //             $sumasset += $valueasset['margin'];
     //             $sumassetBTC += $valueasset['marginBTC'];
-    //             $sumassetUSD += $valueasset['marginUSD'];  
+    //             $sumassetUSD += $valueasset['marginUSD'];
 
     //         }
     //         $archivassetSum[$value['asset']]['asset'] = $value['asset'];
@@ -174,7 +174,7 @@ $assetBUN = array_values(array_unique(array_column($archivassetSum, 'BUN')));
 $filetradeFeeKom = 'E:\binance\tradeFeeKom.txt';
 $fileexchangeInfo = 'E:\binance\exchangeInfo.txt';
 if(time()-filemtime($filetradeFeeKom) > 3600 || time()-filemtime($fileexchangeInfo) > 3600){
-    //Даные в файле устарели УДАЛЯЕМ 
+    //Даные в файле устарели УДАЛЯЕМ
     unlink($filetradeFeeKom);
     unlink($fileexchangeInfo);
 
@@ -188,7 +188,7 @@ if(time()-filemtime($filetradeFeeKom) > 3600 || time()-filemtime($fileexchangeIn
 
     $time = microtime(true) - $start;
     echo 'Файлы ОБНОВЛЕНЫ. время: '.round($time, 4).' сек.<br/>';
-}else{    
+}else{
     //Даные в файле актуальны читаем
     $tradeFeeKom = $Bin->readFile($filetradeFeeKom);
     $exchangeInfo = $Bin->readFile($fileexchangeInfo);
@@ -227,7 +227,7 @@ if (!$historyBUY  = $Bin->readFile($filehistoryBUY )) $historyBUY  = array();
       // if (!in_array($key, array_column($accountBalance, 'asset'))) {
       //     unset($historyBUY[$key]);
       //     continue;
-      // }      
+      // }
       $kurs = $Bin->kurs($value['base'], $ticker24hr);
       $historyBUY[$key]['kursUSD'] = $kurs['kursUSD'];
       $historyBUY[$key]['correctionUSD']= bcdiv($value['BUYkursUSD'], $kurs['kursUSD'], 8);
@@ -253,7 +253,7 @@ die();
             $accountBalance[$valueAccoun['asset']]['BUYPrice'] = $accountBalanceOld[$valueAccoun['asset']]['BUYPrice'];
             // $accountBalance[$valueAccoun['asset']]['executedQty'] = $accountBalanceOld[$valueAccoun['asset']]['executedQty'];
             // $accountBalance[$valueAccoun['asset']]['BUYPriceBTC'] = $accountBalanceOld[$valueAccoun['asset']]['BUYPriceBTC'];
-            // $accountBalance[$valueAccoun['asset']]['BUYPriceUSD'] = $accountBalanceOld[$valueAccoun['asset']]['BUYPriceUSD'];        
+            // $accountBalance[$valueAccoun['asset']]['BUYPriceUSD'] = $accountBalanceOld[$valueAccoun['asset']]['BUYPriceUSD'];
             $accountBalance[$valueAccoun['asset']]['update']= 'BalanceOld';
         }elseif(isset($SymbolBUY[$accountBalanceOld[$valueAccoun['asset']]['BUYSymbol']])){
             $order = $SymbolBUY[$accountBalanceOld[$valueAccoun['asset']]['BUYSymbol']];
@@ -263,26 +263,24 @@ die();
             $accountBalance[$valueAccoun['asset']]['BUYPrice'] = $order['cummulativeQuoteQty']/$order['executedQty'] ;
             // $accountBalance[$valueAccoun['asset']]['executedQty'] = $order['executedQty'];
             // $accountBalance[$valueAccoun['asset']]['BUYPriceBTC'] = $accountBalance[$valueAccoun['asset']]['BUYPrice'] * $order['kurs']['kursBTC'];
-            // $accountBalance[$valueAccoun['asset']]['BUYPriceUSD'] = $accountBalance[$valueAccoun['asset']]['BUYPrice'] * $order['kurs']['kursUSD'];       
+            // $accountBalance[$valueAccoun['asset']]['BUYPriceUSD'] = $accountBalance[$valueAccoun['asset']]['BUYPrice'] * $order['kurs']['kursUSD'];
             $accountBalance[$valueAccoun['asset']]['update']= 'SymbolBUY';
         }
 
-
-        
         //Условие проверки на ОБНОВЛЕНИЯ  по последнему ордеру
         $n=0;
-        //Исключаем    
+        //Исключаем
         if ($accountBalanceOld[$valueAccoun['asset']]['total'] >= $accountBalance[$valueAccoun['asset']]['total']) $n++;
-        //Исключаем    
+        //Исключаем
         if (isset($accountBalanceOld[$valueAccoun['asset']]['BUYPrice']))  $n++;
-        //Исключаем    
+        //Исключаем
         if ($accountBalanceOld[$valueAccoun['asset']]['BUYPrice'] !=='')  $n++;
-        //Исключаем    
+        //Исключаем
         if ($accountBalanceOld[$valueAccoun['asset']]['BUYPrice'] != '0')  $n++;
-        //Исключаем    
+        //Исключаем
         if ($updateBUYPrice == '0')  $n++;
 
-        if ($n==5)  continue; 
+        if ($n==5)  continue;
 
         $accountBalance[$valueAccoun['asset']]['update']= 'InfoAsset';
 
@@ -292,7 +290,7 @@ die();
         if ($arraysymbolInfoBase = array_values($Bin->multiSearch($exchangeInfo['symbols'], array('quoteAsset' => $valueAccoun['asset'], 'status'=>'TRADING')))) {
 
             // echo '<br/>      Может быть базой количество:', count($arraysymbolInfoBase),'<br/>';
-            foreach ($arraysymbolInfoBase as $key => $value) {                
+            foreach ($arraysymbolInfoBase as $key => $value) {
                 //Получить все заказы
                 $allOrders= $Bin->allOrders(array('symbol' => $value['symbol'], 'limit' =>'10'));
                 if (count($allOrders)==0) continue;
@@ -311,7 +309,7 @@ die();
                 //Получить все заказы
                 $allOrders= $Bin->allOrders(array('symbol' => $value['symbol'], 'limit' =>'10'));
                 if (count($allOrders)==0) continue;
-                //Выбераем закупки                
+                //Выбераем закупки
                 $OrdersBUY = array_values($Bin->multiSearch($allOrders, array( 'status' => 'EXPIRED','status' => 'FILLED', 'side' => 'BUY')));
                 if (count($OrdersBUY)==0) continue;
                 //Запоминаем последний ордер
@@ -323,19 +321,19 @@ die();
         }
 
         //Сортируем и получаем самую последний из всех symbols
-        if (count($arrayemaxOrders)==0) continue; 
+        if (count($arrayemaxOrders)==0) continue;
             usort($arrayemaxOrders, function($a, $b) {
                 return $a['time'] - $b['time'];
             });
-        // $Bin->showArrayTable($arrayemaxOrders);          
-       // continue;   
+        // $Bin->showArrayTable($arrayemaxOrders);
+       // continue;
         $maxOrdersBUY = array_pop($arrayemaxOrders);
         $accountBalance[$valueAccoun['asset']]['BUYSymbol'] =  $maxOrdersBUY['symbol'];
         $accountBalance[$valueAccoun['asset']]['side'] =  $maxOrdersBUY['side'];
         $accountBalance[$valueAccoun['asset']]['BUYTime']= $maxOrdersBUY['time'];
 
 
-        
+
         $maxOrdersBUYsymbolInfo = array_values($Bin->multiSearch($exchangeInfo['symbols'], array('symbol' => $maxOrdersBUY['symbol'], 'status'=>'TRADING')));
         // $Bin->show($maxOrdersBUYsymbolInfo);
 
@@ -348,8 +346,8 @@ die();
 
             // $accountBalance[$valueAccoun['asset']]['BUYkursUSD'] = $kurs['kursUSD'];
             // $accountBalance[$valueAccoun['asset']]['BUYkursBTC'] = $kurs['kursBTC'];
-             
-            // $accountBalance[$valueAccoun['asset']]['BUYPriceBTC'] = number_format($avgpriceBUY*$kurs['kursBTC'], 8, '.', ''); 
+
+            // $accountBalance[$valueAccoun['asset']]['BUYPriceBTC'] = number_format($avgpriceBUY*$kurs['kursBTC'], 8, '.', '');
             // $accountBalance[$valueAccoun['asset']]['BUYPriceUSD'] = number_format($avgpriceBUY*$kurs['kursUSD'], 8, '.', '');
 
         }
@@ -358,21 +356,21 @@ die();
             $accountBalance[$valueAccoun['asset']]['BUYPrice'] = $avgpriceBUY = number_format($maxOrdersBUY['cummulativeQuoteQty']/$maxOrdersBUY['executedQty'], 8, '.', '');
             // $accountBalance[$valueAccoun['asset']]['BUYkursUSD'] = $kurs['kursUSD'];
             // $accountBalance[$valueAccoun['asset']]['BUYkursBTC'] = $kurs['kursBTC'];
-             
-            // $accountBalance[$valueAccoun['asset']]['BUYPriceBTC'] = number_format($kurs['kursBTC'], 8, '.', ''); 
+
+            // $accountBalance[$valueAccoun['asset']]['BUYPriceBTC'] = number_format($kurs['kursBTC'], 8, '.', '');
             // $accountBalance[$valueAccoun['asset']]['BUYPriceUSD'] = number_format($kurs['kursUSD'], 8, '.', '');
 
         }
 
-     
+
         // echo $maxOrdersBUY['symbol'], ' ', $valueAccoun['asset'], ' avgpriceBUY: ', $avgpriceBUY, ' kursUSD: ', $accountBalance[$valueAccoun['asset']]['kursUSD'],'<br/>';
         // $Bin->show($maxOrdersBUY);
-        
+
     }
 
 $time = microtime(true) - $start;
 echo 'Время выполнения обновления: '.round($time, 4).' сек.<br/><br/><br/>';
-$start2 = microtime(true); 
+$start2 = microtime(true);
 
 
 // die('STOP STOP');
@@ -384,13 +382,13 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
     //Удаляем  пустоту
     if (!isset($valueAccoun['asset'])) {
         unset($accountBalance[$keyAccoun]);
-        continue;  
+        continue;
     }
     //Удаляем строки с балагсом менее
     if ($valueAccoun['total_USD'] < 0.1){
         unset($accountBalance[$keyAccoun]);
-       continue; 
-    } 
+       continue;
+    }
     //Исключаем  asset USDT
     if ($valueAccoun['asset']=='USDT') continue;
 
@@ -402,13 +400,13 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
     // $accountBalance[$valueAccoun['asset']]['bidPrice'] = '';
     // // $accountBalance[$valueAccoun['asset']]['PricBTC'] = '';
     // // $accountBalance[$valueAccoun['asset']]['PricUSD'] = '';
-        
+
     // $accountBalance[$valueAccoun['asset']]['quantitySELL'] = '';
 
     // $accountBalance[$valueAccoun['asset']]['sumBUY'] = '';
     // $accountBalance[$valueAccoun['asset']]['sumtaker']='';
 
-    // $accountBalance[$valueAccoun['asset']]['sumSELL'] =''; 
+    // $accountBalance[$valueAccoun['asset']]['sumSELL'] ='';
     // $accountBalance[$valueAccoun['asset']]['summaker'] = '';
 
     // $accountBalance[$valueAccoun['asset']]['margin_sum'] = '';
@@ -417,17 +415,17 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
     // $accountBalance[$valueAccoun['asset']]['margin_p'] = '';
     // $accountBalance[$valueAccoun['asset']]['max_p'] = '';
     // $accountBalance[$valueAccoun['asset']]['change_p'] = '';
-    // $accountBalance[$valueAccoun['asset']]['sell'] = ''; 
+    // $accountBalance[$valueAccoun['asset']]['sell'] = '';
 
 
 //*********************************************************************************
     $accountBalance[$valueAccoun['asset']]['symbol'] = $valueAccoun['BUYSymbol'];
-    
+
     //Находим текущую цену symbol
     $PricSymbol = array_values($Bin->multiSearch($bookTicker, array('symbol' => $accountBalance[$valueAccoun['asset']]['symbol'])));
     $accountBalance[$valueAccoun['asset']]['bidPrice'] = $PricSymbol['0']['bidPrice'];
 
- 
+
     $accountBalance[$valueAccoun['asset']]['base'] = $AssetInfo[0]['quoteAsset'];
 
     //Получаем курс
@@ -445,43 +443,43 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
     // if ($accountBalance[$valueAccoun['asset']]['total'] < $accountBalance[$valueAccoun['asset']]['min'] //asset c низким балансом
     //     || !isset($accountBalanceOld[$valueAccoun['asset']]['BUYPriceUSD'])){ // если нет цены закупки
     //     // echo $valueAccoun['asset'], " continue<br/>";
-    //     continue; 
-    // }  
+    //     continue;
+    // }
 
     //ПРОДАЖА*******************************
 
- 
+
         //Определяем количество для продажи
         $balancequantitySELL = $valueAccoun['total'] - $valueAccoun['min'];
         $accountBalance[$valueAccoun['asset']]['quantitySELL'] = $quantitySELL = $Bin->round_min($balancequantitySELL>0?$balancequantitySELL:0, $arrayAssetInfo[0]['filters'][2]['minQty']);
-       
-        $accountBalance[$valueAccoun['asset']]['sumBUY'] = $sumBUY = number_format($quantitySELL * $accountBalanceOld[$valueAccoun['asset']]['BUYPrice'], 8, '.', '');       
+
+        $accountBalance[$valueAccoun['asset']]['sumBUY'] = $sumBUY = number_format($quantitySELL * $accountBalanceOld[$valueAccoun['asset']]['BUYPrice'], 8, '.', '');
         $accountBalance[$valueAccoun['asset']]['sumSELL'] = $sumSELL = number_format($quantitySELL * $accountBalance[$valueAccoun['asset']]['bidPrice'], 8, '.', '');
-        
+
         //Исключаем остатки менее 10$
         if ($accountBalance[$valueAccoun['asset']]['total_USD']  < 10 || $sumBUY == 0) continue;
-   
+
         //Находим комисию биржи
         $accountBalance[$valueAccoun['asset']]['sumtaker'] = $sumtaker = number_format(($sumBUY * $tradeFeeKom[$accountBalance[$keyAccoun]['symbol']]['taker']), 8, '.', '');
         $accountBalance[$valueAccoun['asset']]['summaker'] = $summaker = number_format(($sumSELL * $tradeFeeKom[$accountBalance[$keyAccoun]['symbol']]['maker']), 8, '.', '');
 
         //находим маржу и % маржи
-        $accountBalance[$valueAccoun['asset']]['margin_sum'] = $margin_sum = number_format($sumSELL - $summaker - $sumBUY - $sumtaker , 8, '.', ''); 
-        $accountBalance[$valueAccoun['asset']]['margin_sum_USD'] = number_format($margin_sum * $kurs['kursUSD'], 4, '.', ''); 
+        $accountBalance[$valueAccoun['asset']]['margin_sum'] = $margin_sum = number_format($sumSELL - $summaker - $sumBUY - $sumtaker , 8, '.', '');
+        $accountBalance[$valueAccoun['asset']]['margin_sum_USD'] = number_format($margin_sum * $kurs['kursUSD'], 4, '.', '');
 
         $accountBalance[$valueAccoun['asset']]['margin_p'] = $margin_p = number_format($margin_sum/$sumBUY*100, 8, '.', '');
 
         //Запоминмем максимальный % маржи
         if ($accountBalanceOld[$valueAccoun['asset']]['max_p'] == '' || $accountBalanceOld[$valueAccoun['asset']]['max_p'] < $margin_p) {
-            $accountBalance[$valueAccoun['asset']]['max_p'] = $margin_p;        
+            $accountBalance[$valueAccoun['asset']]['max_p'] = $margin_p;
         }else{
             $accountBalance[$valueAccoun['asset']]['max_p'] = $accountBalanceOld[$valueAccoun['asset']]['max_p'];
         }
 
-        //выщитываем изминение % маржи    
+        //выщитываем изминение % маржи
         $accountBalance[$valueAccoun['asset']]['change_p'] = $change_p = round(($margin_p - $accountBalanceOld[$valueAccoun['asset']]['max_p']),3);
 
-     
+
 
 
 
@@ -492,8 +490,8 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
         $showOpenSymbol[$value['symbol']]['bidPrice'] = number_format($value['bidPrice'], 8, '.', '');
         $showOpenSymbol[$value['symbol']]['sumBUY'] =  number_format($sumBUY, 8, '.', '');
         $showOpenSymbol[$value['symbol']]['sumSELL'] =  number_format($sumSELL, 8, '.', '');
-        $showOpenSymbol[$value['symbol']]['sumtaker'] = number_format($sumtaker, 8, '.', ''); 
-        $showOpenSymbol[$value['symbol']]['summaker'] = number_format($summaker, 8, '.', ''); 
+        $showOpenSymbol[$value['symbol']]['sumtaker'] = number_format($sumtaker, 8, '.', '');
+        $showOpenSymbol[$value['symbol']]['summaker'] = number_format($summaker, 8, '.', '');
         $showOpenSymbol[$value['symbol']]['margin_sum'] = number_format($margin_sum, 8, '.', '');
         $showOpenSymbol[$value['symbol']]['margin_sum_USD'] = number_format($margin_sum_USD, 2, '.', '');
         $showOpenSymbol[$value['symbol']]['margin_p'] = number_format($margin_p, 2, '.', '');
@@ -503,20 +501,20 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
         // echo 'margin_sum: ', $margin_sum, 'margin_p: ', $margin_p, '  change_p: ', $change_p, "<br/>";
 
     }
-       
 
 
-        //Stop Loss      
+
+        //Stop Loss
         if(-1== bccomp((string)$margin_p, (string)$lossМargin_p, 8) &&  -1== bccomp((string)$value['bidPrice'], (string)$value['lastPrice'], 8) && !in_array($symbolInfo[0]['baseAsset'], $positionlong)){
         // echo $value['symbol'], "Stop Loss", 'margin_p:', $margin_p, "<br/>";
             //масив параметров для продажи
-            $ParamsSELL = array('symbol'=>$value['symbol'], 
-                        'side' => 'SELL', 
-                        'type' => 'MARKET', 
+            $ParamsSELL = array('symbol'=>$value['symbol'],
+                        'side' => 'SELL',
+                        'type' => 'MARKET',
                         'quantity' => $quantitySELL,
-                        'timeInForce' => 'IOC', 
-                        'price' => $value['bidPrice']);   
-           
+                        'timeInForce' => 'IOC',
+                        'price' => $value['bidPrice']);
+
             // Создаем ордер на продажу по рыночным ценам
              if ($orderSELL_SL == '1') {
                 $showOpenSymbol[$value['symbol']]['TRADE'] = "Stop Loss";
@@ -530,8 +528,8 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['BUYSymbol']=$OpenSymbol[$value['symbol']]['symbol'];
                         $order['BUYTime']=$OpenSymbol[$value['symbol']]['transactTime'];
-                        $order['BUYPrice']=$BuyPrice;                        
-                        
+                        $order['BUYPrice']=$BuyPrice;
+
 
                         $order['bidPrice']=$value['bidPrice'];
                         $order['orderPrice']=$order['cummulativeQuoteQty']/$order['executedQty'];
@@ -544,7 +542,7 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['marginSM']=$order['cummulativeQuoteQty'] - $order['BUYsum'] -$order['summaker'];
                         // $order['margin']=$order['cummulativeQuoteQty'] - $order['BUYsum'] -$order['commission'];
-                        
+
 
                         $order['marginSM_USD']= $order['marginSM'] * $kurs['kursUSD'];
                         // $order['marginUSD']= $order['margin'] * $kurs['kursUSD'];
@@ -567,8 +565,8 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['BUYSymbol']=$OpenSymbol[$value['symbol']]['symbol'];
                         $order['BUYTime']=$OpenSymbol[$value['symbol']]['transactTime'];
-                        $order['BUYPrice']=$BuyPrice;                        
-                        
+                        $order['BUYPrice']=$BuyPrice;
+
 
                         $order['bidPrice']=$value['bidPrice'];
                         $order['orderPrice']=$value['bidPrice'];
@@ -581,7 +579,7 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['marginSM']=$order['orderSum'] - $order['BUYsum'] -$order['summaker'];
                         // $order['margin']=$order['cummulativeQuoteQty'] - $order['BUYsum'] -$order['commission'];
-                        
+
 
                         $order['marginSM_USD']= $order['marginSM'] * $kurs['kursUSD'];
                         // $order['marginUSD']= $order['margin'] * $kurs['kursUSD'];
@@ -592,19 +590,19 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
                         $ArhivorderSELL[] = array_merge($OpenSymbol[$value['symbol']],$order);
                         unset($OpenSymbol[$value['symbol']]);
                         $Bin->saveFile($ArhivorderSELL, $fileArhivorderSELL);
-                }  
+                }
         }
-        //Take profit   
+        //Take profit
         if (1== bccomp((string)$margin_p, (string)$TakeProfit_p, 8) && -1== bccomp((string)$change_p, (string)$declinem_p, 8) &&  -1== bccomp((string)$value['bidPrice'], (string)$value['lastPrice'], 8)) {
         // echo $value['symbol'], "Take profit<br/>", 'margin_p:', $margin_p, "<br/>";
             //масив параметров для продажи
-            $ParamsSELL = array('symbol'=>$value['symbol'], 
-                        'side' => 'SELL', 
-                        'type' => 'LIMIT', 
+            $ParamsSELL = array('symbol'=>$value['symbol'],
+                        'side' => 'SELL',
+                        'type' => 'LIMIT',
                         'quantity' => $quantitySELL,
-                        'timeInForce' => 'IOC', 
-                        'price' => $value['bidPrice']); 
-            
+                        'timeInForce' => 'IOC',
+                        'price' => $value['bidPrice']);
+
             // Создаем ордер на продажу
             if ($orderSELL == '1') {
                 $showOpenSymbol[$value['symbol']]['TRADE'] = "Take profit";
@@ -618,8 +616,8 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['BUYSymbol']=$OpenSymbol[$value['symbol']]['symbol'];
                         $order['BUYTime']=$OpenSymbol[$value['symbol']]['transactTime'];
-                        $order['BUYPrice']=$BuyPrice;                        
-                        
+                        $order['BUYPrice']=$BuyPrice;
+
 
                         $order['bidPrice']=$value['bidPrice'];
                         $order['orderPrice']=$order['cummulativeQuoteQty']/$order['executedQty'];
@@ -632,7 +630,7 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['marginSM']=$order['cummulativeQuoteQty'] - $order['BUYsum'] -$order['summaker'];
                         // $order['margin']=$order['cummulativeQuoteQty'] - $order['BUYsum'] -$order['commission'];
-                        
+
 
                         $order['marginSM_USD']= $order['marginSM'] * $kurs['kursUSD'];
                         // $order['marginUSD']= $order['margin'] * $kurs['kursUSD'];
@@ -657,8 +655,8 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['BUYSymbol']=$OpenSymbol[$value['symbol']]['symbol'];
                         $order['BUYTime']=$OpenSymbol[$value['symbol']]['transactTime'];
-                        $order['BUYPrice']=$BuyPrice;                        
-                        
+                        $order['BUYPrice']=$BuyPrice;
+
 
                         $order['bidPrice']=$value['bidPrice'];
                         $order['orderPrice']=$value['bidPrice'];
@@ -671,7 +669,7 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
 
                         $order['marginSM']=$order['orderSum'] - $order['BUYsum'] -$order['summaker'];
                         // $order['margin']=$order['cummulativeQuoteQty'] - $order['BUYsum'] -$order['commission'];
-                        
+
 
                         $order['marginSM_USD']= $order['marginSM'] * $kurs['kursUSD'];
                         // $order['marginUSD']= $order['margin'] * $kurs['kursUSD'];
@@ -683,9 +681,9 @@ foreach ($accountBalance as $keyAccoun => $valueAccoun) {
                         unset($OpenSymbol[$value['symbol']]);
                         $Bin->saveFile($ArhivorderSELL, $fileArhivorderSELL);
                 }
-        } 
+        }
 
-  
+
 
 //удаляем старый и записываем новый масив accountBalance
 unlink($filaccountBalance);

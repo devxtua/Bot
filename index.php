@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 // ini_set('error_reporting', E_ALL);
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);
@@ -31,7 +32,45 @@ require "./~core/model/functions_c.php";
 require "./~core/model/indicators_c.php";
 require "./~core/model/strategies_c.php";
 require "./~core/model/user_c.php";
+
+
 require "./libraries/binance_api/vendor/autoload.php";
+
+
+
+// require "./~core/model/apiviber_c.php";
+// $Viber = new Viber();
+// $Viber->send_message('380505953494','Привет Это бот!');
+
+// $Viber->message_post(
+//     '01234567890A=',
+//     [
+//         'name' => 'Admin', // Имя отправителя. Максимум символов 28.
+//         'avatar' => 'http://avatar.example.com' // Ссылка на аватарку. Максимальный размер 100кб.
+//     ],
+//     'Test'
+// );
+//
+
+
+//*********************************
+// $analytics_indicators_file = 'E:/bot/file/analytics_indicators.txt';
+// if (is_file($analytics_indicators_file)){
+// 	$analytics_indicators = Functions::readFile($analytics_indicators_file);
+// 	foreach ($analytics_indicators as $key => $value) {
+// 		echo "**********************************************<br/>";
+// 		foreach ($value as $key2 => $value2) {
+// 			Functions::showArrayTable($value2, $key.$key2);
+// 		}
+// 	}
+// }else{
+// 	echo "файла нет";
+// }
+
+
+
+
+
 
 header( 'Content-type: text/html; charset=utf-8' );
 echo "<!DOCTYPE html>";
@@ -54,6 +93,11 @@ $Bin = new Binance();
 
 $Users = new Users();
 $GLOBALS['Users'] = &$Users;
+
+//Получаем информацию о symbol
+// $symbolInfo = Functions::multiSearch($Bin->exchangeInfo['symbols'], array('symbol' => 'ETHDOWNUSDT', 'status'=>'TRADING'))[0] ;
+// Functions::show($symbolInfo);
+
 
 $Indicators = new Indicators();
 $GLOBALS['Indicators'] = &$Indicators;
@@ -151,10 +195,13 @@ if ($_GET['START'] == 'START') {
 
 $result = '';
 if ($_GET['action'] == '') {
-
+	header('refresh: 20');
 	echo '<p style="text-align: right; "><a href="index.php?START=START" >USERS</a>&nbsp;&nbsp;&nbsp;&nbsp';
 	echo '<a href="./cron/updating_strategies.php?action=show" target="_blank">updat_strategies</a>&nbsp;&nbsp;&nbsp;&nbsp;';
-	echo '<a href="./cron/bot.php?action=show" target="_blank">bot</a>&nbsp;&nbsp;&nbsp;&nbsp;</p>';
+	echo '<a href="./cron/bot.php?action=show" target="_blank">bot</a>&nbsp;&nbsp;&nbsp;&nbsp;';
+	echo '<a href="index.php?action=analytics_indicators" target="_blank">analytics_indicators</a>&nbsp;&nbsp;&nbsp;&nbsp;';
+	echo '<a href="index.php?action=testBUY" target="_blank">testBUY</a>&nbsp;&nbsp;&nbsp;&nbsp;';
+	echo '<a href="index.php?action=testSymbols" target="_blank">testSymbols</a>&nbsp;&nbsp;&nbsp;&nbsp;</p>';
 
 	//проверяем стратегии user
 	if (count($Users->user_arrey)>0) {
@@ -167,27 +214,95 @@ if ($_GET['action'] == '') {
 		}
 
 		foreach ($Users->user_arrey as $key => $user) {
+			// Functions::show($user, '');
+
+
 			echo '<div style="text-align: right; background: #fc0;">', '  <font size="20" color=blue face="Arial">', date("H:i:s", time()), '</font></div>';
 			$Bin->initialization($user[$exchange]['config']['KEY'], $user[$exchange]['config']['SEC']);
-			// Functions::show($Bin, '');
 
 			//Получить свободный баланс АК
 			if ($accountBalance = $Bin->accountBalance($base)){
 				echo 'АКТИВЫ ' , $user['login'], ' баланс: <font size="6" color="green" face="Arial">', round(array_sum(array_column($accountBalance, 'total_USD')),2),  '</font> $<br/>';
 				Functions::showArrayTable($accountBalance, '');
 			}
-			if (count($user[$exchange]['strategies'])>0) {
-				Functions::showStrategies($user, "СТРАТЕГИИ ".$exchange);
+			//открытые ордера
+			if ($orderOPEN = $Bin->orderOPEN(array())){
+				Functions::showArrayTable($orderOPEN);
 			}
+
+
+			if (count($user[$exchange]['strategies'])>0) {
+				foreach ($user[$exchange]['strategies'] as $keyS => $strateg) {
+					unset($roi);
+					//обновляем историю ордеров
+					$filehistory = 'D:\binance\history_user\\'.$user['login'].'\\'.$strateg['symbol'].'.txt';
+					if ($_GET['history'] == '1') {
+ 						$allOrders = $Bin->history_orders_symbol($strateg, $filehistory);
+					}else{
+						$allOrders = Functions::readFile($filehistory);
+					}
+					$sum = 0;
+					if (count($allOrders)>0) {
+
+						foreach ($allOrders as $key => $value) {
+
+							// if (stristr($value['clientOrderId'], $strateg['key'])===false){
+							// 	unset($allOrders[$key]);
+							// 	continue;
+							// }
+							if ($value['status'] == 'EXPIRED'|| $value['status'] == 'CANCELED'){
+								unset($allOrders[$key]);
+								continue;
+							}
+
+							if ($value['side'] == 'BUY') {
+								$sum -= $value['cummulativeQuoteQty'];
+							}else{
+								$sum += $value['cummulativeQuoteQty'];
+							}
+							$allOrders[$key]['commission']=bcmul($value['cummulativeQuoteQty'], 0.00075, 8);
+							$sum -= $allOrders[$key]['commission'];
+
+
+							$allOrders[$key]['balans'] = round($sum, 2);
+						}
+						if (count($allOrders)>0) {
+							$invest = abs(min(array_column($allOrders, 'balans')));
+							$roi = bcdiv($sum, $invest, 4)*100;
+						}
+					}
+
+
+					$user[$exchange]['strategies'][$keyS]['order_all'] = count($allOrders);
+					$count = 0;
+					foreach ($orderOPEN as $key => $value) {
+	                    if (stristr($value['clientOrderId'], $strateg['key']) && $value['type'] == 'STOP_LOSS_LIMIT' && $value['symbol'] == $strateg['symbol']) {
+							$count++;
+	                    }
+	                }
+	                $user[$exchange]['strategies'][$keyS]['order_open'] = $count>0?$count:'';
+
+
+
+					$user[$exchange]['strategies'][$keyS]['balans'] = round($sum, 2);
+					$user[$exchange]['strategies'][$keyS]['roi'] = !empty($roi)?$roi:'';
+
+
+				}
+				$title ="СТРАТЕГИИ ".$exchange. ' ';
+				$title .= '<form action="index.php?action=&login='.$user['login'].'&history=1" method="post"><input type="submit" value="ОБНОВИТЬ ИСТОРИЮ"></form>';
+				Functions::showStrategies($user, $title);
+			}
+
+
+
+
 			echo '<p><form action="index.php?action=strateg_add" method="post">
 				<input type="hidden" name="login" value="'.$user['login'].'">
 				<input type="hidden" name="exchange" value="'.$exchange.'">
 				<input type="submit" value="Добавить стратегию для '.$exchange.'">
 				</form><br/></p>';
-			//открытые ордера
-			if ($orderOPEN = $Bin->orderOPEN(array())){
-				Functions::showArrayTable($orderOPEN);
-			}
+
 			//*************************************************************************************************************************
 
 			// if ($allOrderList = $Bin->allOrderList(array())){
@@ -239,8 +354,6 @@ if ($_GET['action'] == '') {
 		$Strategies->strateg_add($_POST);
 	}
 
-
-
 	if($_GET['step'] == ''){
 		$result .= '<form action="index.php?action=strateg_add&step=1" method="post">';
 		$result .= '<p>Новая стратегия</p>';
@@ -264,22 +377,22 @@ if ($_GET['action'] == '') {
 			    $result .= '<option value="'.$value.'">'.$value.'</option>';
 			}
 		$result .='</select>&nbsp;&nbsp;';
-		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="11" min="11" /></p>';
+		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="12" min="12" /></p>';
 
 		$result .= '<p> По умолчанию установлен период 1000 последних свичей.  :</p>';
 		$result .= '<p>start <input type="datetime-local"  name="startTime" value="'.date('Y-m-d', $startTime).'T'.date('H:i', $startTime).'"/>&nbsp;
 	               	 end<input type="datetime-local"  name="endTime" value="'.date('Y-m-d').'T'.date('H:i').'"/>&nbsp;';
 		$result .= '<input type="submit" name="button" value="ANALYTICS_indicators"> </p>';
 
-
-
 	}elseif ($_GET['step'] == 1){
 		$all_indicators = $Indicators->all_indicator($_POST['symbol'], $_POST['interval']);
 
 		if ($_POST['interval']!='off') {
 			// $analytics_arrey = $Indicators->analytics_klines($_POST['interval']);
+			$indicator_arrey = $Indicators->indicator_arrey;
 			$funded_klines = $Bin->funded_klines($_POST, strtotime($_POST['startTime'])*1000, strtotime($_POST['endTime'])*1000);
 			$analytics_indicators =  Functions::analytics_indicators($_POST, $funded_klines);
+			// Functions::show($analytics_indicators, $funded_klines);
 		}
 
 		$result .= '<form action="index.php?action=strateg_add&step=seve" method="post">';
@@ -292,7 +405,7 @@ if ($_GET['action'] == '') {
 		$result .='</select>&nbsp;&nbsp;';
 		$result .= 'Таймфрейм:<select size="0"  name="interval" readonly style="background:#e6e6e6;"><option selected value="'.$_POST['interval'].'">'.$_POST['interval'].'</option>' ;
 		$result .='</select>&nbsp;&nbsp;';
-		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="'.$_POST['trading_limit'].'" min="11" />&nbsp;&nbsp;';
+		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="'.$_POST['trading_limit'].'" min="12" />&nbsp;&nbsp;';
 	    $result .= '<p>Настройки</p>';
 		$result .="BUY_OCO<table border='1'>";
 		$result .="<tr><th>Reinstall</th><th>Distance</th><th>Price</th><th>S_Price</th><th>SL_Price</th></tr>";
@@ -312,17 +425,18 @@ if ($_GET['action'] == '') {
 	    $result .="</table><br/>";
         //SELL_OCO
         $result .="SELL_OCO<table border='1'>";
-		$result .="<tr><th>Reinstall</th><th>Distance</th><th>Price</th><th>S_Price</th><th>SL_Price</th></tr>";
+		$result .="<tr><th>&#10003;</th><th>Reinstall</th><th>Distance</th><th>Price</th><th>S_Price</th><th>SL_Price</th></tr>";
         foreach ([0=>'start',1=>'1',2=>'2'] as $key =>  $value) {
         	if ($key == 0) {
-        		$param = array('Distance' => 0, 'Price' => 1.1, 'S_Price' => 0.995, 'SL_Price' => 0.98);
+        		$param = array('Distance' => 0, 'Price' => 1.006, 'S_Price' => 0.98, 'SL_Price' => 0.9);
         	}elseif ($key == 1) {
-        		$param = array('Distance' => -1, 'Price' => 1.1, 'S_Price' => 0.995, 'SL_Price' => 0.98);
+        		$param = array('Distance' => -2.55, 'Price' => 1.006, 'S_Price' => 0.999, 'SL_Price' => 0.9);
         	}elseif ($key == 2) {
-        		$param = array('Distance' => -1, 'Price' => 1.1, 'S_Price' => 0.990, 'SL_Price' => 0.98);
+        		$param = array('Distance' => -0.55, 'Price' => 1.006, 'S_Price' => 0.996, 'SL_Price' => 0.9);
         	}
 
  			$result .= '<tr>';
+ 			$result .= '<tr><td><input type="checkbox" name="indicator_arrey['.$i.'][indicator]" value="'.$key.'"></td>';
             $result .= '<td>'.$value.'</td>';
             $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][Distance]" value="'.$param['Distance'].'" min="-100" max="0" step="0.01"></td>';
             $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][Price]" value="'.$param['Price'].'" min="1" max="5" step="0.00000001"></td>';
@@ -332,46 +446,62 @@ if ($_GET['action'] == '') {
         }
 	    $result .="</table><br/>";
 
-		// $result .= 'Показать анализ последних 1000 свечей при условии тренда свечи:<input type="radio" checked name="trend_end_klin" value="NO"/>NO' ;
-		// foreach (['all', 'up', 'down', 'equally'] as $key => $value) {
-		//  	$result .= '<input type="radio" name="trend_end_klin" value="'.$value.'"/>'.$value;
-		// }
-
 		$result .='<p>Индикаторы:</p>';
 		$result .="<table border='1'>";
-		$result .="<tr><th>&#10003;</th><th>Indicator</th><th>value now</th><th>Operator</th><th>Index</th>";
-		if ($_POST['interval'] != 'off' && $_POST['trend_end_klin'] != 'NO')
+		$result .="<tr><th>&#10003;</th><th>Indicator</th><th>key</th><th>Now</th><th>Operator</th><th>Index</th><th>updat avto</th><th>Analytics param</th><th>Operator</th><th>Index</th>";
+
+		//аналитика шапка
+		// if ($_POST['interval'] != 'off' && $_POST['trend_end_klin'] != 'NO')
 			foreach (reset($analytics_indicators) as $key => $value) {
 				if ($key == 'indicator') continue;
+				$analytics_key[] = $key;
 				$result .='<th>'.$key.'</th>';
 			}
 		$result .="</tr>";
 		$i=0;
-		// Functions::show($Indicators->analytics_arrey);
-		//<td title="'.$Indicators->indicator_arrey[]['description'].'">'.$Indicators->indicator_arrey[]['title'].'</td>
+
  		foreach ($all_indicators as $key => $value) {
-            $result .= '<tr><td><input type="checkbox" name="indicator_arrey['.$i.'][indicator]" value="'.$key.'"></td><td>'.$key.'</td><td>'.$all_indicators[$key].'</td>';
+            $result .= '<tr><td><input type="checkbox" name="indicator_arrey['.$i.'][indicator]" value="'.$key.'"></td>';
+            $result .='<td title="'.$indicator_arrey[$key]['description'].'">'.$indicator_arrey[$key]['title'].'</td>';
+            $result .='<td title="'.$key.'">***</td>';
+            $result .='<td>'.$all_indicators[$key].'</td>';
 			$result .= '<td><select size="0"  name="indicator_arrey['.$i.'][operator]" required placeholder="Выберите operator"><option selected disabled>Выбрать</option>';
 				foreach (['<', '=', '>'] as $operator) {
 		            $result .= '<option value="'.$operator.'">'.$operator.'</option>';
 		        }
 			$result .= '</select></td>';
             $result .= '<td><input size="5" type="number" name="indicator_arrey['.$i.'][value]" step="0.00000001"></td>';
-            $i++;
 
+            //авто обновление
+            $result .= '<td><input type="checkbox" name="indicator_arrey['.$i.'][updat]" value="true"></td>';
+			$result .= '<td><select size="0"  name="indicator_arrey['.$i.'][updat_analytics_key]" title="Выберите analytics_ind" ><option></option>' ;
+		        foreach ($analytics_key as $key1 => $value) {
+		                $result .= '<option value="'.$value.'">'.$value.'</option>';
+		        }
+			$result .='</select></td>';
+			$result .= '<td><select size="0"  name="indicator_arrey['.$i.'][updat_operator]" title="Выберите оператор" ><option></option>' ;
+		        foreach (['bcmul'=>'* уножить','bcdiv' => '/ разделить', 'bcadd'=>'+ плюс', 'bcsub'=>'- минус'] as $key2 => $value2) {
+		                $result .= '<option value="'.$key2.'">'.$value2.'</option>';
+		        }
+			$result .='</select></td>';
+			$result .= '<td><input size="5" type="number" name="indicator_arrey['.$i.'][updat_value]" title="значение" value="" ></td>';
+
+            //аналитика значения
             foreach ($analytics_indicators[$key] as $k => $value) {
 				if ($k == 'indicator') continue;
-				$result .='<th>'.$value.'</th>';
+				$result .='<td>'.$value.'</td>';
 			}
+
+			$i++;
         }
 	    $result .="</table><br/>";
 
-		$result .= '<input type="hidden" readonly name="setting" value="'.date("Y-m-d H:i:s", time()).'NEW user" /></p>';
-		$result .= '<p><input type="radio" checked name="status" value="OFF"/>OFF' ;
-		$result .= '<input type="radio" name="status" value="ON"/>ON';
-		$result .='<input type="submit" value="Сохранить"/></p></form>';
+		$result .= '<input type="hidden" readonly name="setting" value="" /></p>';
+		$result .= '<input type="hidden" readonly name="creat_time" value="'.(time()*1000).'" /></p>';
 
-		$result .= '<form action="index.php?action=strateg_add&step=" method="post">
+		$result .= '<p><input type="radio" checked name="status" value="OFF"/>OFF<input type="radio" name="status" value="ON"/>ON<input type="submit" value="Сохранить"/></p></form>';
+
+		$result .= '<form action="action="index.php?action=strateg_add" method="post">
 						<input type="submit" value="Назад">
 					</form>';
 	}
@@ -391,6 +521,14 @@ if ($_GET['action'] == '') {
 		$all_indicators = $Indicators->all_indicator($strateg['symbol'], $strateg['interval']);
 		if ($strateg['interval']!='off') {
 			$analytics_arrey = $Indicators->analytics_klines($strateg['interval']);
+
+			$startTime = $_POST['startTime']??time() - $Bin->interval[$strateg['interval']]*1000;
+			$endTime = $_POST['endTime']??time();
+echo date("Y-m-d H:i:s", $startTime), '<br>';
+echo date("Y-m-d H:i:s", $endTime), '<br>';
+			$indicator_arrey = $Indicators->indicator_arrey;
+			$funded_klines = $Bin->funded_klines($_POST, strtotime($startTime)*1000, strtotime($endTime)*1000);
+			$analytics_indicators =  Functions::analytics_indicators($_POST, $funded_klines);
 		}
 
 		$result .= '<form action="index.php?action=optimization&step=strateg_change" method="post">';
@@ -403,13 +541,13 @@ if ($_GET['action'] == '') {
 		$result .='</select>&nbsp;&nbsp;';
 		$result .= 'Таймфрейм:<select size="0"  name="interval" readonly style="background:#e6e6e6;"><option selected value="'.$strateg['interval'].'">'.$strateg['interval'].'</option>' ;
 		$result .='</select>&nbsp;&nbsp;';
-		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="'.$strateg['trading_limit'].'" min="11" />&nbsp;&nbsp;';
+		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="'.$strateg['trading_limit'].'" min="12" />&nbsp;&nbsp;';
 
 			    $result .= '<p>Настройки </p>';
 		$result .="BUY_OCO<table border='1'>";
 		$result .="<tr><th>Reinstall</th><th>Distance</th><th>Price</th><th>S_Price</th><th>SL_Price</th></tr>";
 		//BUY_OCO
- 		foreach ([0=>'start'] as $key => $value) {
+ 		foreach ($strateg['BUY_OCO'] as $key => $value) {
  			if ($key == 0) {
         		$param = $strateg['BUY_OCO'][0];
         	}
@@ -425,7 +563,7 @@ if ($_GET['action'] == '') {
         //SELL_OCO
         $result .="SELL_OCO<table border='1'>";
 		$result .="<tr><th>Reinstall</th><th>Distance</th><th>Price</th><th>S_Price</th><th>SL_Price</th></tr>";
-        foreach ([0=>'start',1=>'1',2=>'2'] as $key =>  $value) {
+        foreach ($strateg['SELL_OCO'] as $key =>  $value) {
         	if ($key == 0) {
         		$param = $strateg['SELL_OCO'][0];
         	}elseif ($key == 1) {
@@ -436,51 +574,67 @@ if ($_GET['action'] == '') {
 
  			$result .= '<tr>';
             $result .= '<td>'.$value.'</td>';
-            $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][Distance]" value="'.$param['Distance'].'" min="-100" max="0" step="0.01"></td>';
+            $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][Distance]" value="'.$param['Distance'].'" min="-100" max="0" step="0.0000001"></td>';
             $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][Price]" value="'.$param['Price'].'" min="1" max="5" step="0.00000001"></td>';
             $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][S_Price]" value="'.$param['S_Price'].'" min="-5" max="1" step="0.00000001"></td>';
             $result .= '<td><input size="5" type="number" name="SELL_OCO['.$key.'][SL_Price]" value="'.$param['SL_Price'].'" min="-5" max="1" step="0.00000001"></td>';
+
             $result .= '</tr>';
         }
 	    $result .="</table><br/>";
-
+	    //Индикаторы
 		$result .='<p>Индикаторы:</p>';
-            $result .='Индикаторы:';
-			$result .="<table border='1'>";
-			$result .="<tr><th>Title</th><th>&#10003;</th><th>Indicator</th><th>Operator</th><th>Index</th></tr>";
-			$result .= '<tr>';
-			$i = 0;
-	 		foreach ($strateg['indicator_arrey'] as $key => $value) {
-	 			$result .= '<tr><td>'.$Indicators->indicator_arrey[$value['indicator']]['title'].'</td>';
- 				$result .= '<td><input type="checkbox"  checked disabled></td>';
- 				$result .= '<td>'.$value['indicator'].'</td>';
-				$result .= '<input type="hidden"  name="indicator_arrey['.$i.'][indicator]" value="'.$value['indicator'].'">';
-				$result .= '<td><input type="text"  name="indicator_arrey['.$i.'][operator]" value="'.$value['operator'].'" readonly  style="background:#e6e6e6;"></td>';
- 				$result .= '<td><input size="5" type="number" name="indicator_arrey['.$i.'][value]" step="0.00000001" value="'.$value['value'].'"></td>';
-                $i++;
-	        }
+
+	   	$startTime = time() - $Bin->interval[$strateg['interval']]*1000;
+		$result .= '<p>УСТАНОВЛЕН период 1000 последних свичей. МОЖНО ИЗМЕНИТЬ : start <input type="datetime-local"  name="startTime" value="'.date('Y-m-d', $startTime).'T'.date('H:i', $startTime).'"/>&nbsp;
+	               	 end<input type="datetime-local"  name="endTime" value="'.date('Y-m-d').'T'.date('H:i').'"/>&nbsp';
+		$result .= '<input type="submit" name="button" value="ANALYTICS_indicators"></p>';
+
+		$result .="<table border='1'>";
+		$result .="<tr><th>Title</th><th>&#10003;</th><th>Indicator</th><th>Operator</th><th>Index</th><th>updat avto</th><th>Index</th><th>Index</th><th>Index</th></tr>";
+		$result .= '<tr>';
+		$i = 0;
+ 		foreach ($strateg['indicator_arrey'] as $key => $value) {
+ 			$result .= '<tr><td>'.$Indicators->indicator_arrey[$value['indicator']]['title'].'</td>';
+			$result .= '<td><input type="checkbox"  checked disabled></td>';
+			$result .= '<td>'.$value['indicator'].'</td>';
+			$result .= '<input type="hidden"  name="indicator_arrey['.$i.'][indicator]" value="'.$value['indicator'].'">';
+			$result .= '<td><input type="text"  name="indicator_arrey['.$i.'][operator]" value="'.$value['operator'].'" readonly  style="background:#e6e6e6;"></td>';
+			$result .= '<td><input size="5" type="number" name="indicator_arrey['.$i.'][value]" step="0.00000001" value="'.$value['value'].'"></td>';
+
+
+            $result .= '<td><input type="checkbox" name="indicator_arrey['.$i.'][indicator]" value="'.$key.'"></td>';
+			$result .= '<td><select size="0"  name="" title="Выберите analytics_indicators" ><option></option>' ;
+		        foreach ([1,2,3] as $key => $value) {
+		                $result .= '<option value="'.$value.'">'.$value.'</option>';
+		        }
+			$result .='</select></td>';
+			$result .= '<td><select size="0"  name="" title="Выберите оператор" ><option></option>' ;
+		        foreach (['*','2',3] as $key => $value) {
+		                $result .= '<option value="'.$value.'">'.$value.'</option>';
+		        }
+			$result .='</select></td>';
+
+
+
+            $result .= '<td><input size="5" type="number" name="" title="значение" value="" ></td>';
+
+			$result .= '</tr>';
+            $i++;
+        }
 
 
 	    $result .="</table><br/>";
 
 
+
+
+		$result .= '<p> Установить histori_time <input type="datetime-local" name="histori_time" value="'.date('Y-m-d', $strateg['histori_time']/1000).'T'.date('H:i', $strateg['histori_time']/1000).'" /></p>';
 		$result .= '<p><input type="radio" checked name="status" value="OFF"/>OFF' ;
-		$result .= '<input type="radio" name="status" value="ON"/>ON';
+		$result .= '<input type="radio" name="status" value="ON"/>ON</p>';
+		$result .= '<input type="hidden" readonly name="change_time" value="'.(time()*1000).'" />';
 
-		$result .= '<input type="hidden" readonly name="config" value="" /></p>';
-		$result .= '<input type="hidden" readonly name="setting" value="'.date("Y-m-d H:i:s", time()).' user" />';
-		$result .='<p><input type="submit" value="Сохранить"/>&nbsp;'.$strateg['setting'].'</p></form>';
-
-		// if ($_POST['trend_end_klin'] != 'NO') {
-		// 	$result .='<div class="block1"><p>СТАТИСТИКА индикаторов klin (Даные для анализа) </p>';
-		// 	$result .='<p>'.$analytics_arrey['all']['time']['description'].': '.$analytics_arrey['all']['time']['value'].'</p>';
-		// 	$result .='<p>'.$analytics_arrey['all']['count']['description'].': '.$analytics_arrey['all']['count']['value'].'</p>';
-		// 	$result .='<p>'.$analytics_arrey['all']['priceChangeCoefficient']['description'].': '.$analytics_arrey['all']['priceChangeCoefficient']['value'].'</p>';
-		// 	$result .='<p>'.$analytics_arrey['all']['price_max']['description'].': '.$analytics_arrey['all']['price_max']['value'].'</p>';
-		// 	$result .='<p>'.$analytics_arrey['all']['price_min']['description'].': '.$analytics_arrey['all']['price_min']['value'].'</p>';
-		// 	$result .='<p>даные статистики (AVG, MIN, MAX) выбраны и  посчитаны по условию: символ: <strong>'.$_POST['symbol'].'</strong>, таймфрейм: <strong>'.$_POST['interval'].'</strong>, тренд: <strong>'.$_POST['trend_end_klin'].'</strong>, выборка: <strong>'.$analytics_arrey[$_POST['trend_end_klin']]['count'].'</strong></p>';
-		// 	$result .= '</div>';
-		// }
+		$result .='<p><input type="submit" value="Сохранить"/></p></form>';
 
 		$result .='<br/>Условия расчета вариантов каждой НАСТРОЙКИ';
 		$result .='<form action="index.php?action=optimization&step=strateg_config_save" method="post">';
@@ -489,117 +643,136 @@ if ($_GET['action'] == '') {
         $result .='<input type="hidden" name="exchange" value="'.$_POST['exchange'].'">';
         $result .='<input type="hidden" name="key" value="'.$_POST['key'].'">';
 
-		// $result .='<table border="1">';
-		// $result .="<tr><th>setting</th><th>MIN</th><th>MAX</th><th>STEP</th></tr>";
+		$result .='<table border="1">';
 
-		// if (count($strateg['config'])>1) {
-		// 	foreach ($strateg['config'] as $key_config => $value) {
-		// 		$result .= '<tr>';
-		// 		$result .= '<td>'.$key_config.'</td>';
-		// 		$result .= '<td><input size="5" type="number" name="config['.$key_config.'][min]" step="0.00000001" value="'.$value['min'].'"></td>';
-		// 		$result .= '<td><input size="5" type="number" name="config['.$key_config.'][max]" step="0.00000001" value="'.$value['max'].'"></td>';
-		// 		$result .= '<td><input size="5" type="number" name="config['.$key_config.'][step]" step="0.00000001" value="'.$value['step'].'"></td>';
-		// 		$result .= '<td><input size="5" type="hidden" name="config['.$key_config.'][count]" step="0.00000001" value="'.$value['count'].'"></td>';
-		// 		$result .= '</tr>';
-		// 	}
-		// }else{
-		// 		$result .= '<tr>';
-		// 		$result .= '<td>Кофициент PROFIT:</td>';
-		// 		$result .= '<td><input size="5" type="number" name="config[coefficient_profit][min]" step="0.00000001" value="1.01"></td>';
-		// 		$result .= '<td><input size="5" type="number" name="config[coefficient_profit][max]" step="0.00000001" value="1.01"></td>';
-		// 		$result .= '<td><input size="5" type="number" name="config[coefficient_profit][step]" step="0.00000001" value="0"></td>';
-		// 		$result .= '<input size="5" type="hidden" name="config[coefficient_profit][count]" step="0.00000001" value="0">';
-		// 		$result .= '</tr>';
+		if (strcasecmp($_POST['button'], 'options') == 0 || strcasecmp($_POST['button'], 'COMBINATIONS') == 0) {
+			$options_indicator = Functions::options_indicator($_POST['config']);
+			$header = Functions::header_table($options_indicator);
+			$result .="<tr><th>setting</th><th>MIN</th><th>MAX</th><th>STEP</th><th>count</th>";
+			foreach ($header as $key => $value) {
+				$result .="<th>".$key."</th>";
+			}
+			$result .="</tr>";
+
+		}else{
+			$result .="<tr><th>setting</th><th>MIN</th><th>MAX</th><th>STEP</th></tr>";
+		}
 
 
-		// 		$result .= '<tr>';
-		// 		$result .= '<td>Кофициент STOP LOSS::</td>';
-		// 		$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][min]" step="0.00000001" value="0.999"></td>';
-		// 		$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][max]" step="0.00000001" value="0.999"></td>';
-		// 		$result .= '<td><input size="5" type="number" name="config[coefficient_stop_loss][step]" step="0.00000001" value="0"></td>';
-		// 		$result .= '<input size="5" type="hidden" name="config[coefficient_stop_loss][count]" step="0.00000001" value="0">';
-		// 		$result .= '</tr>';
 
-		// 		foreach ($strateg['indicator_arrey'] as $key => $value) {
-		// 			if ($value['operator'] == '<') {
-		// 				$min = $analytics_arrey['all'][$value['indicator']]['min'];
-		// 				$max = $analytics_arrey['all'][$value['indicator']]['avg'];
-		// 				$sub = bcsub($max, $min, 8);
-		// 				$step = bcdiv($sub, 10, 8);
-		// 			}else if ($value['operator'] == '>') {
-		// 				$min = $analytics_arrey['all'][$value['indicator']]['avg'];
-		// 				$max = $analytics_arrey['all'][$value['indicator']]['max'];
-		// 				$sub = bcsub($max, $min, 8);
-		// 				$step = bcdiv($sub, 10, 8);
-		// 			}else if ($value['operator'] == '='){
-		// 				$min = $value['value'];
-		// 				$max = $value['value'];
-		// 				$step = 0;
-		// 			}
+		if (!empty($strateg['config'])) {
+			// unset($strateg['config']);
+			foreach ($strateg['config'] as $key_config => $value) {
+				$result .= '<tr>';
+				$result .= '<td>'.$key_config.'</td>';
+				$result .= '<td><input size="5" type="number" name="config['.$key_config.'][min]" step="0.00000001" value="'.$value['min'].'"></td>';
+				$result .= '<td><input size="5" type="number" name="config['.$key_config.'][max]" step="0.00000001" value="'.$value['max'].'"></td>';
+				$result .= '<td><input size="5" type="number" name="config['.$key_config.'][step]" step="0.00000001" value="'.$value['step'].'"></td>';
 
-		//  			$result .= '<tr>';
-		// 			$result .= '<td>'.$value['indicator'].'</td>';
-		// 			$result .= '<td><input size="5" type="number" name="config['.$value['indicator'].'][min]" step="0.00000001" value="'.$min.'"></td>';
-		// 			$result .= '<td><input size="5" type="number" name="config['.$value['indicator'].'][max]" step="0.00000001" value="'.$max.'"></td>';
-		// 			$result .= '<td><input size="5" type="number" name="config['.$value['indicator'].'][step]" step="0.00000001" value="'.$step.'"></td>';
-		// 			$result .= '<input size="5" type="hidden" name="config['.$value['indicator'].'][count]" step="0.00000001" value="0">';
-		// 			$result .= '</tr>';
-		// 		}
-		// }
+					if (strcasecmp($_POST['button'], 'options') == 0 || strcasecmp($_POST['button'], 'COMBINATIONS') == 0) {
+						$result .= '<td>'.count($options_indicator[$key_config]).'</td>';
+						foreach ($options_indicator[$key_config] as $key => $value) {
+							$result .="<td>".$value."</td>";
+						}
+					}
 
-		// $result .= '</table><br/>';
+				$result .= '</tr>';
+			}
+		}else{
+				$result .= '<tr>';
+				$result .= '<td>SELL_OCO_start_Price:</td>';
+				$result .= '<td><input size="5" type="number" name="config[SELL_OCO_start_Price][min]" step="0.00000001" value="1.01"></td>';
+				$result .= '<td><input size="5" type="number" name="config[SELL_OCO_start_Price][max]" step="0.00000001" value="1.01"></td>';
+				$result .= '<td><input size="5" type="number" name="config[SELL_OCO_start_Price][step]" step="0.00000001" value="0"></td>';
+
+					if (strcasecmp($_POST['button'], 'options') == 0 || strcasecmp($_POST['button'], 'COMBINATIONS') == 0||strcasecmp($_POST['button'], 'ANALYTICS_indicators') == 0) {
+						$result .= '<input size="5" type="hidden" name="config[SELL_OCO_start_Price][count]"value="'.count($options_indicator['SELL_OCO_start_Price']).'">';
+						foreach ($options_indicator['SELL_OCO_start_Price'] as $key => $value) {
+							$result .="<td>".$value."</td>";
+						}
+					}
+				$result .= '</tr>';
+
+
+				$result .= '<tr>';
+				$result .= '<td>SELL_OCO_start_S_Price:</td>';
+				$result .= '<td><input size="5" type="number" name="config[SELL_OCO_start_S_Price][min]" step="0.00000001" value="0.999"></td>';
+				$result .= '<td><input size="5" type="number" name="config[SELL_OCO_start_S_Price][max]" step="0.00000001" value="0.999"></td>';
+				$result .= '<td><input size="5" type="number" name="config[SELL_OCO_start_S_Price][step]" step="0.00000001" value="0"></td>';
+
+					if (strcasecmp($_POST['button'], 'options') == 0 || strcasecmp($_POST['button'], 'COMBINATIONS') == 0||strcasecmp($_POST['button'], 'ANALYTICS_indicators') == 0) {
+						$result .= '<input size="5" type="hidden" name="config[SELL_OCO_start_S_Price][count]" step="0.00000001" value="'.count($options_indicator['SELL_OCO_start_S_Price']).'">';
+						foreach ($options_indicator['SELL_OCO_start_S_Price'] as $key => $value) {
+							$result .="<td>".$value."</td>";
+						}
+					}
+				$result .= '</tr>';
+
+
+				foreach ($strateg['indicator_arrey'] as $key => $value) {
+					//значения по умолчанию
+					if ($value['operator'] == '<') {
+						$min = $analytics_arrey['all'][$value['indicator']]['min'];
+						$max = $analytics_arrey['all'][$value['indicator']]['avg'];
+						$sub = bcsub($max, $min, 8);
+						$step = bcdiv($sub, 10, 8);
+					}else if ($value['operator'] == '>') {
+						$min = $analytics_arrey['all'][$value['indicator']]['avg'];
+						$max = $analytics_arrey['all'][$value['indicator']]['max'];
+						$sub = bcsub($max, $min, 8);
+						$step = bcdiv($sub, 10, 8);
+					}else if ($value['operator'] == '='){
+						$min = $value['value'];
+						$max = $value['value'];
+						$step = 0;
+					}
+
+		 			$result .= '<tr>';
+					$result .= '<td>'.$value['indicator'].'</td>';
+					$result .= '<td><input size="5" type="number" name="config['.$value['indicator'].'][min]" step="0.00000001" value="'.$min.'"></td>';
+					$result .= '<td><input size="5" type="number" name="config['.$value['indicator'].'][max]" step="0.00000001" value="'.$max.'"></td>';
+					$result .= '<td><input size="5" type="number" name="config['.$value['indicator'].'][step]" step="0.00000001" value="'.$step.'"></td>';
+					$result .= '<input size="5" type="hidden" name="config['.$value['indicator'].'][count]" step="0.00000001" value="">';
+						if (strcasecmp($_POST['button'], 'options') == 0 || strcasecmp($_POST['button'], 'COMBINATIONS') == 0||strcasecmp($_POST['button'], 'ANALYTICS_indicators') == 0) {
+							foreach ($options_indicator[$value['indicator']] as $key => $value) {
+								$result .="<td>".$value."</td>";
+							}
+						}
+					$result .= '</tr>';
+				}
+		}
+
+		$result .= '</table><br/>';
+		$result .= '<input type="submit" name="button" value="OPTIONS">&nbsp;';
+		$result .= '<input type="submit" name="button" value="COMBINATIONS">&nbsp;&nbsp;';
+
 		$startTime = time() - $Bin->interval[$strateg['interval']]*1000;
 		$result .= '<p>УСТАНОВЛЕН период 1000 последних свичей. МОЖНО ИЗМЕНИТЬ : start <input type="datetime-local"  name="startTime" value="'.date('Y-m-d', $startTime).'T'.date('H:i', $startTime).'"/>&nbsp;
 	               	 end<input type="datetime-local"  name="endTime" value="'.date('Y-m-d').'T'.date('H:i').'"/></p>';
 		$result .= '<input type="submit" name="button" value="ANALYTICS_indicators"> &nbsp;Подбор настроек статегии &nbsp;';
-		$result .= '<input type="submit" name="button" value="OPTIONS">&nbsp;';
-		$result .= '<input type="submit" name="button" value="COMBINATIONS">&nbsp;&nbsp;';
+
 
 		$result .= '<input type="submit" name="button" value="TEST COMBINATIONS">';
-		$result .= '</form>';
+		$result .= '</form><br/>';
 		echo $result ;
 
-		if (strcasecmp($_POST['button'], 'options') == 0) {
-			$options_indicator = Functions::options_indicator($_POST['config']);
-
-			$example = Functions::array_map_keys(create_function('$a,$b','return $a+$b;'), $_POST['config'], $options_indicator);
-			Functions::showArrayTable($example, 'Настройки ');
-
-		}elseif (strcasecmp($_POST['button'], 'COMBINATIONS') == 0) {
-			$options_indicator = Functions::options_indicator($_POST['config']);
-			$example = Functions::array_map_keys(create_function('$a,$b','return $a+$b;'), $_POST['config'], $options_indicator);
-			Functions::showArrayTable($example, 'Настройки ');
-
-
+		if (strcasecmp($_POST['button'], 'COMBINATIONS') == 0) {
 			$combinations = Functions::combinations_options($options_indicator, array_keys($options_indicator));
-			echo 'COMBINATIONS: <strong>'. number_format(count($combinations), 0, ',', ' ')."</strong> вариантов настроек<br/>";
-			Functions::showArrayTable($combinations, '');
+			Functions::showArrayTable($combinations, 'COMBINATIONS: <strong>'. number_format(count($combinations), 0, ',', ' ')."</strong> вариантов настроек<br/>");
 
 		}elseif (strcasecmp($_POST['button'], 'ANALYTICS_indicators') == 0) {
 			$funded_klines = $Bin->funded_klines($strateg, strtotime($_POST['startTime'])*1000, strtotime($_POST['endTime'])*1000);
 
 
 			$analytics_indicators =  Functions::analytics_indicators($strateg, $funded_klines);
-			Functions::showArrayTable($analytics_indicators, 'analytics_indicators');
+			Functions::showAnalytics_indicators($analytics_indicators, 'analytics_indicators');
 
 
 			$settings_strategy = Functions::settings_strategy($strateg, $analytics_indicators, $funded_klines);
 			// Functions::show($settings_strategy, 'settings_strategy');
 
-
-
-
-
 			// Functions::best_indicators($strateg, $funded_klines);
 			// Functions::show($analytics_arrey, 'analytics_arrey');
-
-
-
-
-
-
-
-
 
 			// $analytics_arrey = $Indicators->analytics_klines($strateg['interval'], $funded_klines);
 			// Functions::show($analytics_arrey, 'analytics_arrey');
@@ -611,11 +784,9 @@ if ($_GET['action'] == '') {
 				$funded_klines = $Bin->funded_klines($strateg, strtotime($_POST['startTime'])*1000, strtotime($_POST['endTime'])*1000);
 				// Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
 
-
-
 			// // for ($i=0; $i < 300; $i++) {
 				$options_indicator = Functions::options_indicator($_POST['config']);
-				$example = Functions::array_map_keys(create_function('$a,$b','return $a+$b;'), $_POST['config'], $options_indicator);
+				$example = Functions::array_map_keys(function($a,$b){return $a+$b;}, $_POST['config'], $options_indicator);
 				// Functions::showArrayTable($example, 'Настройки ');
 
 				$combinations = Functions::combinations_options($options_indicator, array_keys($options_indicator));
@@ -646,49 +817,125 @@ if ($_GET['action'] == '') {
 	die('Стратегия удалина');
 }elseif($_GET['action'] == 'history') {
 
-	// Functions::show($Users->user_arrey[$_POST['login']]['binance']['config']['KEY']);
-	$Bin = new binance($Users->user_arrey[$_POST['login']]['binance']['config']['KEY'], $Users->user_arrey[$_POST['login']]['binance']['config']['SEC']);
+	$Bin->initialization($Users->user_arrey[$_POST['login']]['binance']['config']['KEY'], $Users->user_arrey[$_POST['login']]['binance']['config']['SEC']);
 	$strateg = $Users->user_arrey[$_POST['login']][$_POST['exchange']]['strategies'][$_POST['key']];
-	if ($allOrders = $Bin->allOrders(array('symbol'=>$strateg['symbol'], 'limit'=>1000))){
-		$sum = 0;
+	$filehistory = 'D:\binance\history_user\\'.$_POST['login'].'\\'.$strateg['symbol'].'.txt';
+ 	$allOrders = $Bin->history_orders_symbol($strateg, $filehistory);
+
+        $time = array_column($allOrders, 'updateTime');
+        array_multisort($time, SORT_ASC, $allOrders);
+
+
+  //       $status = array_unique(array_column($allOrders, 'status'));
+		// Functions::show($status, $status);
+		$sum = $balansQty = 0;
 		foreach ($allOrders as $key => $value) {
 
-			if (stristr($value['clientOrderId'], $_POST['key'])===false){
-				unset($allOrders[$key]);
-				continue;
-			}
+			// if (stristr($value['clientOrderId'], $_POST['key'])===false){
+			// 	unset($allOrders[$key]);
+			// 	continue;
+			// }
+
+
 			if ($value['status'] == 'EXPIRED'|| $value['status'] == 'CANCELED'){
 				unset($allOrders[$key]);
 				continue;
 			}
+			if ($value['status'] != 'NEW') {
+				$allOrders[$key]['price'] = bcdiv($value['cummulativeQuoteQty'], $value['executedQty'], 8);
+			}
+
 
 			if ($value['side'] == 'BUY') {
 				$sum -= $value['cummulativeQuoteQty'];
+				$balansQty += $value['executedQty'];
+
 			}else{
 				$sum += $value['cummulativeQuoteQty'];
+				$balansQty -= $value['executedQty'];
+
 			}
-			$allOrders[$key]['price_fact'] ='';
-			if ($value['status'] != 'NEW') {
-				$allOrders[$key]['price_fact'] = bcdiv($value['cummulativeQuoteQty'], $value['executedQty'], 8);
-			}
-			$allOrders[$key]['balans'] = round($sum, 2);
+
+			$allOrders[$key]['commission']=bcmul($value['cummulativeQuoteQty'], 0.00075, 8);
+			$sum -= $allOrders[$key]['commission'];
+
+
+			$allOrders[$key]['balansQty'] = round($balansQty,2);
+			$allOrders[$key]['balansUSDT'] = round($sum, 2);
 		}
 
-		$invest = abs(min(array_column($allOrders, 'balans')));
-		$roi = bcdiv($sum, $invest, 4)*100;
-		$title = 'Cтратегия: '.$_POST['key'].'<br/>';
-		$title .= 'Количество операций: '.count($allOrders).'<br/>';
-		$title .= 'Максимальная инвистиция: '.$invest.'<br/>';
-		$title .= 'Баланс: <font size="10" color="green" face="Arial">'.round($sum,2).'</font>$<br/>';
-		$title .= 'ROI: <font size="10" color="green" face="Arial">'.$roi.'</font>%<br/>';
+			$invest = abs(min(array_column($allOrders, 'balansUSDT')));
+			$roi = bcdiv($sum, $invest, 4)*100;
+			$title = 'Cтратегия: '.$_POST['key'].'<br/>';
+			$title .= 'Количество операций: '.count($allOrders).'<br/>';
+			$title .= 'Максимальная инвистиция: '.$invest.'<br/>';
+			$title .= 'Баланс: <font size="10" color="green" face="Arial">'.round($sum,2).'</font>$<br/>';
+			$title .= 'ROI: <font size="10" color="green" face="Arial">'.$roi.'</font>%<br/>';
+
 		Functions::showHistory(array_reverse($allOrders), $title);
-	}
+
 	// if ($myTrades = $Bin->myTrades(array('symbol'=>$strateg['symbol']))){
 	// 	Functions::showArrayTable(array_reverse($myTrades));
 	// }
 	die('История');
+}elseif($_GET['action'] == 'analytics_indicators') {
+	$dir_analyticsSymbol = 'E:/bot/file/analyticsSymbol/';
+    $files = array_reverse(scandir($dir_analyticsSymbol, 1));//сканируем директорию с файлами
+    foreach ($files as $key => $name) {
+
+	        $file = $dir_analyticsSymbol.$name;
+
+	        if (!is_file($file)) continue;//проверяем существование файла
+
+			$analytics_indicators = Functions::readFile($file);
+			// Functions::show_Analytics_symbol($analytics_indicators, $name);
+			echo $analytics_indicators['BTCUSDT']['indicator_klin_Coefficient_1m']['up_avg'];
+			Functions::show($analytics_indicators, $name);
+			// foreach ($analytics_indicators as $key => $value) {
+			// 	Functions::show($value, $key);
+			// }
+
+	}
+}elseif($_GET['action'] == 'testSymbols') {
+	$testSymbols_file = 'E:/bot/file/380505953494/testSymbols.txt';
+	if (is_file($testSymbols_file)){
+		$testSymbols = Functions::readFile($testSymbols_file);
+		Functions::showArrayTable($testSymbols, 'testSymbols');
+	}else{
+		echo "НЕТ файла: ".$testBUY_file;
+	}
+}elseif($_GET['action'] == 'testBUY') {
+	$testBUY_file = 'E:/bot/file/380505953494/testBUY.txt';
+	if (is_file($testBUY_file)){
+		$testBUY = Functions::readFile($testBUY_file);
+		$sum_symbols = [];
+		$sum = 0;
+		foreach ($testBUY as $key => &$v) {
+				if (!array_key_exists($v['symbol'], $sum_symbols)) {
+					$sum_symbols[$v['symbol']] = ['SL' => 0, 'TP' => 0, '' => 0, 'sum'=> 0];
+				}
+
+				$sum_symbols[$v['symbol']][$v['status']]++;
+				$sum_symbols[$v['symbol']]['sum'] += (float)$v['profit'];
+
+				$sum += (float)$v['profit'];
+				$v['balans'] = $sum;
+		}
+
+        $stolb = array_column($sum_symbols, 'sum');
+        array_multisort($stolb, SORT_DESC, $sum_symbols);
+
+		Functions::showArrayTable_key($sum_symbols);
+		foreach ($sum_symbols as $key => $vlue) {
+			$testBUYsymbol = Functions::multiSearch($testBUY, array('symbol' => $key));
+			Functions::showArrayTable_key($testBUYsymbol, $vlue['sum']);
+		}
+		// Functions::showArrayTable_key($testBUY, $sum);
+	}else{
+		echo "НЕТ файла: ".$testBUY_file;
+	}
 }
-echo $result ;
+echo $result;
 
 // die();
 

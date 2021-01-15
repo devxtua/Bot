@@ -26,10 +26,8 @@ class Functions{
         print_r($array);
         echo '<br/>';
     }
-
-    //посмотреть масив таблицей
-    public static function showArrayTable($array, $title='Название не указано'){
-        echo  "$title";
+        //посмотреть масив таблицей
+    public static function  header_table($array){
         //бераем полную шапку
         $k = $max_count = 0;
         foreach ($array as $key => $value) {
@@ -39,6 +37,15 @@ class Functions{
                 $k = $key;
             }
         }
+        return $array[$k];
+    }
+
+
+    //посмотреть масив таблицей
+    public static function showArrayTable($array, $title='Название не указано'){
+        echo  "$title";
+        //бераем полную шапку
+        $header = Functions::header_table($array);
         echo  "<table border='1'>";
         $i = $sum = 0;
         if (!is_array($array)) {
@@ -48,14 +55,14 @@ class Functions{
         foreach ($array as $key1 => $value1) {
                     if ( $i == 0) {
                         echo "<tr>";
-                        foreach ($array[$k] as $key => $value) {
+                        foreach ($header as $key => $value) {
                             echo '<th>', $key, '</th>';
                         }
                         echo '</tr>';
                         $i++;
                     }
                     if (++$n%2==0) {
-                        echo '<tr class="srok">';
+                        echo '<tr class="strok">';
                     }else{
                         echo "<tr>";
                     }
@@ -65,7 +72,9 @@ class Functions{
                             if (strcasecmp($key, '0') == 0
                                 ||strcasecmp($key, 'timeBUY') == 0
                                 || strcasecmp($key, 'timeSELL') == 0
-                                || strcasecmp($key, 'closeTime') == 0) {
+                                || strcasecmp($key, 'closeTime') == 0
+                                || strcasecmp($key, 'time') == 0
+                                || strcasecmp($key, 'updateTime') == 0) {
                                 echo '<td>', date("Y-m-d H:i:s", $value/1000), '</td>';
                             }elseif (strcasecmp($key, '1110') == 0
                                 || strcasecmp($key, 'Start_time') == 0
@@ -118,7 +127,7 @@ class Functions{
                         $i++;
                     }
                     if (++$n%2==0) {
-                        echo '<tr class="srok">';
+                        echo '<tr class="strok">';
                     }else{
                         echo "<tr>";
                     }
@@ -160,7 +169,7 @@ class Functions{
 
         echo '</table><br/>';
     }
-        //посмотреть масив таблицей
+    //посмотреть масив таблицей
     public static function showHistory($array, $title='Название не указано'){
         echo  "$title";
         echo  "<table border='1'>";
@@ -217,6 +226,7 @@ class Functions{
             if ($key_user == 'login') continue;
 
             echo  "$title";
+
             echo  "<table border='1'>";
             $i = 0;
             $n = 0;
@@ -229,54 +239,47 @@ class Functions{
                     echo '</tr>';
                     $i++;
                 }
-                 if (++$n%2==0) {
-                        echo '<tr class="srok">';
-                    }else{
-                        echo "<tr>";
-                    }
-                if (is_array($value1)) {
-                   foreach ($value1 as $key => $value) {
-                        if($key == 'symbol'){
-                            echo '<td><a href="https://www.binance.com/ru/trade/'.$value1['asset'].'_'.str_replace($value1['asset'], '', $value1['symbol']).'" target="_blank">'. $value.'</a></td>';
-                        }elseif (strcasecmp($key, 'time') == 0
-                            ||strcasecmp($key, 'timeSELL') == 0
-                            || strcasecmp($key, 'openTime') == 0
-                            || strcasecmp($key, 'closeTime') == 0
-                            || strcasecmp($key, 'BUYTime') == 0
-                            || strcasecmp($key, 'updateTime') == 0
-                            || strcasecmp($key, '0') == 0) {
-                            echo '<td>', date("Y-m-d H:i:s", $value/1000), '</td>';
-                        }elseif (strcasecmp($key, 'statusTime') == 0
-                            || strcasecmp($key, 'Start_time') == 0
-                            || strcasecmp($key, 'Control_time') == 0
-                            || strcasecmp($key, 'max_date') == 0
-                            || strcasecmp($key, 'min_date') == 0) {
-                            echo '<td>', date("H:i:s", $value/1000), '</td>';
-                        }else{
-                            if (is_array($value)) {
-                                echo '<td> arrey(', count($value), ')</td>';
-                            }else{
-                                echo '<td>', $value, '</td>';
-                            }
-                        }
-                    }
+                if(++$n%2==0) {
+                    echo '<tr class="strok">';
                 }else{
-                    echo '<td>   ', $value1, '   </td>';
+                    echo "<tr>";
                 }
 
+                if (!is_array($value1)) die('НЕ МАСИВ');
+               foreach ($value1 as $key => $value) {
+
+                    if ($key == 'order_open' &&  $value != '') {
+                        echo '<td class="marked">';
+                    }elseif ($key == 'status' &&  $value =='ON') {
+                        echo '<td class="marked">';
+                    }else{
+                        echo "<td>";
+                    }
+
+                    if($key == 'symbol'){
+                        echo '<a href="https://www.binance.com/ru/trade/'.$value1['asset'].'_'.str_replace($value1['asset'], '', $value1['symbol']).'" target="_blank">'. $value.'</a></td>';
+                    }elseif (strcasecmp($key, 'creat_time') == 0
+                                || strcasecmp($key, 'change_time') == 0
+                                || strcasecmp($key, 'histori_time') == 0
+                                || strcasecmp($key, 'histori_time') == 0) {
+                                echo  date("Y-m-d H:i:s", $value/1000), '</td>';
+                    }else{
+                        echo is_array($value)?' arrey('. count($value). ')</td>':$value, '</td>';
+                    }
+                }
                 //кнопка тест
                 echo'<td><form action="index.php?action=optimization" method="post">
                     <input type="hidden" name="login" value="'.$user['login'].'">
                     <input type="hidden" name="exchange" value="'.$key_user.'">
                     <input type="hidden" name="key" value="'.$key1.'">
-                    <input type="submit" value="Оптимизация">
+                    <input type="submit" value="Optimization">
                     </form></td>';
                 //кнопка тест
                 echo'<td><form action="index.php?action=history" method="post">
                     <input type="hidden" name="login" value="'.$user['login'].'">
                     <input type="hidden" name="exchange" value="'.$key_user.'">
                     <input type="hidden" name="key" value="'.$key1.'">
-                    <input type="submit" value="ИСТОРИЯ СДЕЛОК">
+                    <input type="submit" value="History">
                     </form></td>';
                 //кнопка изменить
                 echo'<td><form action="index.php?action=remove" method="post">
@@ -289,6 +292,90 @@ class Functions{
             }
             echo '</table><br/>';
         }
+    }
+
+
+        //посмотреть масив таблицей
+    public static function show_Analytics_symbol($array, $title='Название не указано'){
+        foreach ($array as $key => $value1) {
+            echo $key;
+            foreach ($value1 as $key => $value) {
+                //бераем полную шапку
+                $header = Functions::header_table($value);
+                echo  '<table border=1';
+                $i = $sum = 0;
+                if (!is_array($value))  return;
+
+                echo "<tr>";
+                foreach ($header as $keyheader => $valueheader) {
+                    echo '<th>', $keyheader, '</th>';
+                }
+                echo '</tr>';
+                $n = 0;
+                $class = '';
+                foreach ($value as $k => $val) {
+                    echo ++$n%2==0? '<tr class="strok">': '<tr>';
+
+                    if (is_array($val)) {
+                       foreach ($val as $key => $v) {
+                                echo '<td >', is_array($v)?arrey(', count($value), '):$v, '</td>';
+
+                                 $class = '';
+                        }
+                    }else{
+
+                        echo '<td>   ', $val, '   </td>';
+                    }
+
+                     echo '</tr>';
+                }
+
+                echo '</table><br/>';
+            }
+        }  //посмотреть масив таблицей
+    }
+
+    public static function showAnalytics_indicators($array, $title='Название не указано'){
+
+        echo  "$title &nbsp;&nbsp;&nbsp;&nbsp;";
+        echo '<input type="submit" name="button" name="bloc" value="ALL">&nbsp;';
+        echo '<input type="submit" name="button" name="bloc" value="down">&nbsp;';
+        echo '<input type="submit" name="button" name="bloc" value="up">&nbsp;';
+        echo '<input type="submit" name="button" name="bloc" value="equally">&nbsp;';
+
+        //бераем полную шапку
+        $header = Functions::header_table($array);
+        echo  '<table border=1';
+        $i = $sum = 0;
+        if (!is_array($array))  return;
+
+        echo "<tr>";
+        foreach ($header as $key => $value) {
+            if (stristr($key, 'down') !=false || stristr($key, 'up') !=false || stristr($key, 'equally') !=false)   $class = 'class="none"';
+            echo '<th '.$class.'>', $key, '</th>';
+        }
+        echo '</tr>';
+        $n = 0;
+        $class = '';
+        foreach ($array as $key1 => $value1) {
+            echo ++$n%2==0? '<tr class="strok">': '<tr>';
+
+            if (is_array($value1)) {
+               foreach ($value1 as $key => $value) {
+                        if (stristr($key, 'down') !=false||stristr($key, 'up') !=false||stristr($key, 'equally') !=false)   $class = 'class="none"';
+                        echo '<td '.$class.'>', is_array($value)?arrey(', count($value), '):$value, '</td>';
+
+                         $class = '';
+                }
+            }else{
+
+                echo '<td>   ', $value1, '   </td>';
+            }
+
+             echo '</tr>';
+        }
+
+        echo '</table><br/>';
     }
 
     //посмотреть масив таблицей сделок
@@ -504,6 +591,92 @@ class Functions{
             return 0;
     }
     //****
+
+        //тестовая закупка OCO и добавление в масив
+    public static function test_book_OCO(&$testBUY, $symbol, $trading_limit, $book_SELL_OCO){
+
+        //Формируем параметры тестового ОСО
+            $temp = $book_SELL_OCO;
+            $temp['symbol'] = $symbol['symbol'];
+            $temp['timeBUY'] = time()*1000;
+            $temp['Price_BUY'] = $symbol['askPrice'];
+            $temp['Price_TP'] = bcmul($symbol['askPrice'], $book_SELL_OCO['Price'], 8);
+            $temp['Price_SL'] = bcmul($symbol['askPrice'], $book_SELL_OCO['S_Price'], 8);
+            $temp['quantity'] = bcdiv($trading_limit, $symbol['askPrice'], 8);
+
+            $temp['sum_BUY'] = bcmul($temp['Price_BUY'], $temp['quantity'], 2);
+            $temp['taker'] = bcmul($temp['sum_BUY'], $GLOBALS['tradeFeeKom'][$symbol['symbol']]['taker'], 8);
+
+            $temp['sum_SELL'] = '';
+            $temp['maker'] = '';
+
+            $temp['lastPrice'] = '';
+            $temp['coefficient'] = '';
+
+            $temp['open'] = '';
+            $temp['status'] = '';
+            $temp['timeSELL'] = 0;
+
+            $temp['margin'] = '';
+            $temp['commission'] = '';
+            $temp['profit'] = '';
+
+        //заносим в масив тестовых покупок
+        $testBUY[] = $temp;
+    }
+
+
+    public static function test_check_book_OCO(&$testBUY, $ticker){
+         //Проверка открытых ордеров
+        $open= 0;
+        foreach ($testBUY as $testK => $value) {
+
+            if ($value['status'] != '' || $ticker['symbol'] != $value['symbol']) continue;
+            $testBUY[$testK]['lastPrice'] = $ticker['bidPrice'];
+            $testBUY[$testK]['coefficient'] = bcdiv($ticker['bidPrice'], $testBUY[$testK]['Price_BUY'], 4) ;
+
+            //klin up
+
+                //продажа sl
+                if (-1 == bccomp($ticker['bidPrice'], $value['Price_SL'], 8)) {
+
+                    $testBUY[$testK]['status'] = 'SL';
+                    $testBUY[$testK]['timeSELL'] = time()*1000;
+
+                    $testBUY[$testK]['sum_SELL'] = bcmul($testBUY[$testK]['Price_SL'], $testBUY[$testK]['quantity'], 2);
+                    $testBUY[$testK]['maker'] = bcmul($testBUY[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$ticker['symbol']]['maker'], 8);
+
+                    $testBUY[$testK]['margin'] = bcsub($testBUY[$testK]['sum_SELL'], $testBUY[$testK]['sum_BUY'], 8);
+                    $testBUY[$testK]['commission'] =  bcadd($testBUY[$testK]['taker'], $testBUY[$testK]['maker'], 8);
+                    $testBUY[$testK]['profit'] = bcsub($testBUY[$testK]['margin'], $testBUY[$testK]['commission'], 8);
+                    continue;
+                }
+                //продажа profit
+                if (1 == bccomp($ticker['bidPrice'], $value['Price_TP'], 8)) {
+
+                    $testBUY[$testK]['status'] = 'TP';
+                    $testBUY[$testK]['timeSELL'] = time()*1000;
+
+                    $testBUY[$testK]['sum_SELL'] = bcmul($testBUY[$testK]['Price_TP'], $testBUY[$testK]['quantity'], 8);
+                    $testBUY[$testK]['maker'] = bcmul($testBUY[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$ticker['symbol']]['maker'], 8);
+
+                    $testBUY[$testK]['margin'] = bcsub($testBUY[$testK]['sum_SELL'], $testBUY[$testK]['sum_BUY'], 8);
+                    $testBUY[$testK]['commission'] =  bcadd($testBUY[$testK]['taker'], $testBUY[$testK]['maker'], 8);
+                    $testBUY[$testK]['profit'] = bcsub($testBUY[$testK]['margin'], $testBUY[$testK]['commission'], 8);
+                    continue;
+                }
+
+            //запоменаем количество открытых ордеров
+
+            $testBUY[$testK]['open'] = ++$open;
+
+        }
+
+        return $lastBUY;
+    }
+
+
+
     //тестовая закупка OCO и добавление в масив
     public static function test_buy_OCO(&$test, $strateg, $klin, $combination =''){
         $param = ($combination == '')?  $strateg: $combination;
@@ -522,7 +695,7 @@ class Functions{
             $temp['sum_SELL'] = '';
             $temp['maker'] = '';
 
-            $temp['open'] = $open;
+            $temp['open'] = '';
             $temp['status'] = '';
             $temp['timeSELL'] = '';
 
@@ -533,56 +706,74 @@ class Functions{
         //заносим в масив тестовых покупок
         $test[] = $temp;
     }
+
     //проверка на продажу масива тестовых закупок OCO
     public static function test_check_sell(&$test, $strateg, $klin, $end){
         $lastBUY = $klin[2];
          //Проверка открытых ордеров
         $open= 0;
         foreach ($test as $testK => $value) {
-
             if ($value['status'] != '') continue;
-            //продажа sl
-            //
-            // if (-1 == bccomp($klin[3], $value['Price_SL'], 8) && 1 == bccomp($klin[2], $value['Price_TP'], 8)) {
-            //     $test[$testK]['status'] = 'SL/TP';
-            //     $test[$testK]['timeSELL'] = $klin[0];
+            //klin up
+            if (1 == bccomp(bcdiv($klin[1], $klin[4], 8), 1, 8)) {
+                //продажа sl
+                if (-1 == bccomp($klin[3], $value['Price_SL'], 8)) {
+                    $test[$testK]['status'] = 'SL';
+                    $test[$testK]['timeSELL'] = $klin[0];
 
-            //     $test[$testK]['sum_SELL'] = '';
-            //     $test[$testK]['maker'] = '';
+                    $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_SL'], $test[$testK]['quantity'], 8);
+                    $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
 
-            //     $test[$testK]['margin'] = '';
-            //     $test[$testK]['commission'] =  '';
-            //     $test[$testK]['profit'] = '';
-            //     continue;
-            // }
-            //
-            if (-1 == bccomp($klin[3], $value['Price_SL'], 8)) {
-                $test[$testK]['status'] = 'SL';
-                $test[$testK]['timeSELL'] = $klin[0];
+                    $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
+                    $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
+                    $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['commission'], 8);
+                    continue;
+                }
+                //продажа profit
+                if (1 == bccomp($klin[2], $value['Price_TP'], 8)) {
+                    $test[$testK]['status'] = 'TP';
+                    $test[$testK]['timeSELL'] = $klin[0];
 
-                $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_SL'], $test[$testK]['quantity'], 8);
-                $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
+                    $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_TP'], $test[$testK]['quantity'], 8);
+                    $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
 
-                $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
-                $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
-                $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['taker+maker'], 8);
-                continue;
+                    $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
+                    $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
+                    $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['commission'], 8);
+                    continue;
+                }
             }
-            //продажа profit
-            if (1 == bccomp($klin[2], $value['Price_TP'], 8)) {
-                $test[$testK]['status'] = 'TP';
-                $test[$testK]['timeSELL'] = $klin[0];
+            //klin down
+            if (-1 == bccomp(bcdiv($klin[1], $klin[4], 8), 1, 8)) {
+                //продажа profit
+                if (1 == bccomp($klin[2], $value['Price_TP'], 8)) {
+                    $test[$testK]['status'] = 'TP';
+                    $test[$testK]['timeSELL'] = $klin[0];
 
-                $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_TP'], $test[$testK]['quantity'], 8);
-                $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
+                    $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_TP'], $test[$testK]['quantity'], 8);
+                    $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
 
-                $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
-                $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
-                $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['taker+maker'], 8);
-                continue;
+                    $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
+                    $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
+                    $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['commission'], 8);
+                    continue;
+                }
+                //продажа sl
+                if (-1 == bccomp($klin[3], $value['Price_SL'], 8)) {
+                    $test[$testK]['status'] = 'SL';
+                    $test[$testK]['timeSELL'] = $klin[0];
+
+                    $test[$testK]['sum_SELL'] = bcmul($test[$testK]['Price_SL'], $test[$testK]['quantity'], 8);
+                    $test[$testK]['maker'] = bcmul($test[$testK]['sum_SELL'], $GLOBALS['tradeFeeKom'][$strateg['symbol']]['maker'], 8);
+
+                    $test[$testK]['margin'] = bcsub($test[$testK]['sum_SELL'], $test[$testK]['sum_BUY'], 8);
+                    $test[$testK]['commission'] =  bcadd($test[$testK]['taker'], $test[$testK]['maker'], 8);
+                    $test[$testK]['profit'] = bcsub($test[$testK]['margin'], $test[$testK]['commission'], 8);
+                    continue;
+                }
             }
 
-            //распродажа открытых
+            //конечная распродажа открытых
             if ($end) {
                 $test[$testK]['status'] = 'out';
                 $test[$testK]['timeSELL'] = $klin[0];
