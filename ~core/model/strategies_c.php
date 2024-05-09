@@ -3,7 +3,6 @@ class Strategies {
 
         public $exchange = '';//биржа
 
-        //public $interval = array('1m','3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1W','1M');
         public $status = ['test','optimization','trade','off'];
 
         public $directory_user =  'D:\binance\strategies\\';
@@ -31,11 +30,6 @@ class Strategies {
             $this->strategies_user = Functions::readFile($this->file_user);
             // Functions::show($this->strategies_user, "strategies_user");
         }
-
-
-
-
-
         // Functions::show($this->strategies_user, "Strategies");
     }
 
@@ -45,9 +39,9 @@ class Strategies {
 
 
     //***********************************ДОП методы****************************************************
-    //обавление стратегии
+    //добавление стратегии
     public function strateg_add($POST){
-        Functions::show($POST, "POST");
+        // Functions::show($POST, "POST");
         $array['key'] = $POST['key'];
         $array['title'] = $POST['title'];
         $array['symbol'] = $POST['symbol'];
@@ -96,7 +90,7 @@ class Strategies {
         Functions::saveFile($this->strategies_user, $this->file_user);
     }
 
-    //обавление стратегии
+    //изминение стратегии
     public function strateg_change($POST){
 
 
@@ -121,7 +115,7 @@ class Strategies {
         return $this->strategies_user[$POST['exchange']]['strategies'][$POST['key']];
     }
 
-    //сохраняем config
+    //добавляем изменяем config стратегии
     public function strateg_config_save($POST){
 
         $this->strategies_user[$POST['exchange']]['strategies'][$POST['key']]['config'] = $POST['config'];

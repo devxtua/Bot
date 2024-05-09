@@ -34,10 +34,6 @@ require "./~core/model/strategies_c.php";
 require "./~core/model/user_c.php";
 
 
-require "./libraries/binance_api/vendor/autoload.php";
-
-
-
 // require "./~core/model/apiviber_c.php";
 // $Viber = new Viber();
 // $Viber->send_message('380505953494','Привет Это бот!');
@@ -79,19 +75,14 @@ echo '<link rel="stylesheet" href="./html/css/style.css">';
 echo '<script type="text/javascript" src="./libraries/jquery.js"></script>';
 echo '<script type="text/javascript" src="./html/script/script.js"></script>';
 
-// echo '<h1 class="area">&#36&#36&#36</h1>';
-echo '<h1 class="area">BUCKS</h1>';
+
+// echo '<h1 class="area">BUCKS</h1>';
 
 
 
+$Bin = new Binance('E:\binance\\');
 
-
-
-
-
-$Bin = new Binance();
-
-$Users = new Users();
+$Users = new Users('E:\binance\strategies\\');
 $GLOBALS['Users'] = &$Users;
 
 //Получаем информацию о symbol
@@ -107,9 +98,7 @@ $GLOBALS['Indicators'] = &$Indicators;
 // die();
 
 // Functions::show(array_values(Functions::multiSearch($GLOBALS['ticker24hr'], array('symbol' => 'BTCUSDT'))), 'BTCUSDT ');
-
-// $api = new Binance\API($KEY, $SEC);
-// $api = new Binance\RateLimiter($api);
+// 
 //
 
 //
@@ -180,7 +169,9 @@ $base['BNB']= array('minBalans'=>3, 'minPriceBuy'=>0.00000100);
 $exchange = 'binance';
 
 
-if ($_GET['START'] == 'START') {
+
+
+if (!empty($_GET['START']) && $_GET['START'] == 'START') {
 	unset($_SESSION['login']);
 }elseif(!empty($_SESSION['login'])) {
 	echo '<form action="index.php?action=&login='.$_SESSION['login'].'" method="post"><input type="submit" value="ГЛАВНАЯ '.$_SESSION['login'].'"></form>';
@@ -188,8 +179,6 @@ if ($_GET['START'] == 'START') {
 	$_SESSION['login']= $_GET['login'];
 	echo '<form action="index.php?action=&login='.$_GET['login'].'" method="post"><input type="submit" value="ГЛАВНАЯ '.$_GET['login'].'"></form>';
 }
-
-
 
 
 
@@ -201,7 +190,8 @@ if ($_GET['action'] == '') {
 	echo '<a href="./cron/bot.php?action=show" target="_blank">bot</a>&nbsp;&nbsp;&nbsp;&nbsp;';
 	echo '<a href="index.php?action=analytics_indicators" target="_blank">analytics_indicators</a>&nbsp;&nbsp;&nbsp;&nbsp;';
 	echo '<a href="index.php?action=testBUY" target="_blank">testBUY</a>&nbsp;&nbsp;&nbsp;&nbsp;';
-	echo '<a href="index.php?action=testSymbols" target="_blank">testSymbols</a>&nbsp;&nbsp;&nbsp;&nbsp;</p>';
+	echo '<a href="index.php?action=testSymbols" target="_blank">testSymbols</a>&nbsp;&nbsp;&nbsp;&nbsp;';
+	echo '<a href="./~core/contr/WebSocket.php?" target="_blank">WebSocket</a>&nbsp;&nbsp;&nbsp;&nbsp;</p>';
 
 	//проверяем стратегии user
 	if (count($Users->user_arrey)>0) {
@@ -230,8 +220,7 @@ if ($_GET['action'] == '') {
 				Functions::showArrayTable($orderOPEN);
 			}
 
-
-			if (count($user[$exchange]['strategies'])>0) {
+			if (isset($user[$exchange]['strategies']) && is_array($user[$exchange]['strategies']) && count($user[$exchange]['strategies']) > 0) {
 				foreach ($user[$exchange]['strategies'] as $keyS => $strateg) {
 					unset($roi);
 					//обновляем историю ордеров
@@ -329,7 +318,7 @@ if ($_GET['action'] == '') {
 		echo '<form action="index.php?action=user_add" method="post" ><input type="submit" value="Добавить пользователя"></form>';
 	}
 
-}elseif($_GET['action'] == 'user_add') {
+}elseif($_GET['action'] == 'add_user') {
 
 			if ($_GET['step'] == 'save') {
 				$Users->add_user($_POST);
@@ -338,7 +327,7 @@ if ($_GET['action'] == '') {
 			}
 
 			$result .= '<form action="index.php?action=add_user&step=save" method="post">';
-			$result .= '<p>Ваш номер телефона: <input size="50" type="tel" name="login" required placeholder="380XXXXXXXXX" pattern="38[0-9]{10}"/></p>';
+			$result .= '<p>Пользователь: <input size="50" type="text" name="login" required /></p>';
 			$result .= '<p>Доступ Binance API </p>';
 			$result .= '<p>KEY: <input size="100" type="text" required name="binance[config][KEY]" /></p>';
 			$result .= '<p>SEC: <input size="100" type="text" required name="binance[config][SEC]" /></p>';
@@ -380,7 +369,7 @@ if ($_GET['action'] == '') {
 		$result .= 'Торговый лимит: <input size="0" type="number"  name="trading_limit"  value="12" min="12" /></p>';
 
 		$result .= '<p> По умолчанию установлен период 1000 последних свичей.  :</p>';
-		$result .= '<p>start <input type="datetime-local"  name="startTime" value="'.date('Y-m-d', $startTime).'T'.date('H:i', $startTime).'"/>&nbsp;
+		$result .= '<p>start <input type="datetime-local"  name="startTime" value="'.date('Y-m-d').'T'.date('H:i').'"/>&nbsp;
 	               	 end<input type="datetime-local"  name="endTime" value="'.date('Y-m-d').'T'.date('H:i').'"/>&nbsp;';
 		$result .= '<input type="submit" name="button" value="ANALYTICS_indicators"> </p>';
 
@@ -507,7 +496,7 @@ if ($_GET['action'] == '') {
 	}
 }elseif($_GET['action'] == 'optimization') {
 	$strateg = $Users->user_arrey[$_POST['login']][$_POST['exchange']]['strategies'][$_POST['key']];
-// Functions::show($strateg);
+	// Functions::show($strateg);
 	if ($_GET['step'] == 'strateg_change') {
 		$Strategies = new Strategies($_POST['login']);
 		$strateg = $Strategies->strateg_change($_POST);
@@ -524,8 +513,8 @@ if ($_GET['action'] == '') {
 
 			$startTime = $_POST['startTime']??time() - $Bin->interval[$strateg['interval']]*1000;
 			$endTime = $_POST['endTime']??time();
-echo date("Y-m-d H:i:s", $startTime), '<br>';
-echo date("Y-m-d H:i:s", $endTime), '<br>';
+	echo date("Y-m-d H:i:s", $startTime), '<br>';
+	echo date("Y-m-d H:i:s", $endTime), '<br>';
 			$indicator_arrey = $Indicators->indicator_arrey;
 			$funded_klines = $Bin->funded_klines($_POST, strtotime($startTime)*1000, strtotime($endTime)*1000);
 			$analytics_indicators =  Functions::analytics_indicators($_POST, $funded_klines);
@@ -941,54 +930,38 @@ echo $result;
 
 //******************************************************************
 //отправка SMS
-	// require "./model/apisms_c.php";
-	// $Gateway = new APISMS('843e5bec02b4c36e0202d4a0cf227eaa', 'd9c9f37cc5b86d4368da4cd7b3781a27', 'http://atompark.com/api/sms/', false);
-	// 	$res = $Gateway->execCommad(
-	// 		'sendSMS',
-	// 		array(
-	// 			'sender' => 'xt.ua',
-	// 			'text' => 'привет',
-	// 			'phone' => '380505953494',
-	// 			'datetime' => null,
-	// 			'sms_lifetime' => 0
-	// 		)
-	// 	);
-	// Functions::show($res);
+// require "./model/apisms_c.php";
+// $Gateway = new APISMS('843e5bec02b4c36e0202d4a0cf227eaa', 'd9c9f37cc5b86d4368da4cd7b3781a27', 'http://atompark.com/api/sms/', false);
+// 	$res = $Gateway->execCommad(
+// 		'sendSMS',
+// 		array(
+// 			'sender' => 'xt.ua',
+// 			'text' => 'привет',
+// 			'phone' => '380505953494',
+// 			'datetime' => null,
+// 			'sms_lifetime' => 0
+// 		)
+// 	);
+// Functions::show($res);
 //******************************************************************
 
-// Trade Updates via WebSocket
-// $api->kline($symbolBUY, "1m", function($api, $symbol, $chart) {
-// 	Functions::showArrayTable($chart, "{$symbol}\n");
-//     $endpoint = strtolower( $symbol ) . '@ticker';
-//     $api->terminate( $endpoint );
-// });
-//
-// $api->trades(["BNBBTC"], function($api, $symbol, $trades) {
-//     echo "{$symbol} trades update".PHP_EOL;
-//     print_r($trades);
-//     $endpoint = strtolower( $symbol ) . '@trades';
-//     $api->terminate( $endpoint );
-// });
-
-// $api->depthCache(["BNBBTC"], function($api, $symbol, $depth) {
-//     echo "{$symbol} depth cache update\n";
-//     $limit = 11; // Show only the closest asks/bids
-//     $sorted = $api->sortDepth($symbol, $limit);
-//     $bid = $api->first($sorted['bids']);
-//     $ask = $api->first($sorted['asks']);
-//     echo $api->displayDepth($sorted);
-//     echo "ask: {$ask}\n";
-//     echo "bid: {$bid}\n";
-//     $endpoint = strtolower( $symbol ) . '@depthCache';
-//     $api->terminate( $endpoint );
-// });
 
 
 // echo "Подключеные файлы";
-// $show->show(get_included_files());
+// Functions::show(get_included_files());
 
 // echo "Подключеные классы";
-// $show->show(get_declared_classes());
+// Functions::show(get_declared_classes());
+
+// echo "Масивы";
+// Functions::show($GLOBALS, "_GLOBAL");
+// Functions::show($_SERVER, "_SERVER");
+// Functions::show($_GET, "_GET");
+// Functions::show($_POST, "_POST");
+// Functions::show($_FILES, "_FILES");
+// Functions::show($_COOKIE, "_COOKIE");
+// Functions::show($_SESSION, "_SESSION");
+// Functions::show($_ENV, "_ENV");
 
 // echo 'Время выполнения скрипта: ', round(microtime(true) - $start, 4), ' сек.<br/>';
 // echo 'Обем памяти: ', (memory_get_usage() - $mem_start)/1000000, ' мегабайта.<br/><br/><br/><br/>';

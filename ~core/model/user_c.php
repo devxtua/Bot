@@ -9,9 +9,9 @@ class Users {
 
 
 	  //конструктор КЛАССА
-    public function __construct($login = ''){
+    public function __construct($directory_user, $login = ''){
 
-        $this->directory_user = 'D:\binance\strategies\\';
+        $this->directory_user = $directory_user;
         $files = array_reverse(scandir($this->directory_user, 1));
 
         if ($login == '') {
@@ -36,5 +36,10 @@ class Users {
     //***********************************ДОП методы****************************************************
     public function add_user($array){
         Functions::saveFile($array, $this->directory_user.$array['login'].'.txt');
+    }
+
+
+    public function delete_user($array){
+        unlink($this->directory_user . $array['login'] . '.txt');
     }
 }

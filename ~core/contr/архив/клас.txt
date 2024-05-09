@@ -1,0 +1,974 @@
+<?php
+class binance{
+    //рабочии
+    private $URL = 'https://api.binance.com';
+    private $KEY = 'irieuC5kOGznjzpllwnxx2sDMzdLKPCS42SB8YGZ4Y8eSUz6mDtfWDMclrpUh633';
+    private $SEC = 'FpCQWroQgIh9KyV3Jn7A25tbbpMB93eaK2FbKFXZv7YoMCmVDn5gBoMrwHaSpPUJ';
+    private $Proxy = '';
+
+    //конструктор КЛАССА
+    public function __construct(){
+        //Сверяем серверное время и время 'https://api.binance.com'
+        if ($this->time()['serverTime'] -$this->timestamp() < -3000) {
+            echo 'host :', $this->timestamp(),"<br/>";
+            echo 'api  :', $this->time()['serverTime'],"<br/>";
+            echo $this->time()['serverTime'] -$this->timestamp(),"<br/>";
+            die(' КОНСТРУКТОР STOP');
+        }
+    }
+    //деструктор КЛАССА
+    public function __destruct(){
+    }
+    //Получение системного времени
+    private function timestamp(){
+
+       return   round(microtime(true) * 1000);
+    }
+    //Хеширование параметров запроса
+    private function signature($ParamsCurl){
+
+       return   '&signature='.hash_hmac('SHA256', $ParamsCurl, $this->SEC);
+    }
+    //header доступа к API
+    private function header(){
+        $header = array(
+         "Content-Type: application/x-www-form-urlencoded",
+         "X-MBX-APIKEY: ".$this->KEY);
+        return $header;
+    }
+    //подготовка и выполнение curl запроса
+    private function curl($Endpoints, $Params){
+        //просмотр масив параметров
+        // $this->show($Endpoints);
+        //устанавливаем настройки
+        $array_curl = array(
+            CURLOPT_CUSTOMREQUEST => $Endpoints['quest'],
+            CURLOPT_HTTPHEADER => $this->header(),
+            CURLOPT_URL => $this->URL.$Endpoints['points'],
+            // CURLOPT_USERAGENT => $this->useragent,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 0,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_SSL_VERIFYPEER=> 0,
+            CURLOPT_SSL_VERIFYHOST=> 2
+        );
+        //устанавливаем настройки proxy
+        if (isset($this->Proxy)) {
+            $array_curl[CURLOPT_PROXY] = $Proxy['ip'];             // Прокси, через который будут направляться запросы
+            $array_curl[CURLOPT_PROXYUSERPWD] = $Proxy['proxyauth'];  // Пароль логин proxy
+            $array_curl[CURLOPT_PROXYTYPE] = CURLPROXY_SOCKS5;        // Вид прокси
+        }
+        //выполняем сам запрос в оболоче отлавливани исключений
+        try{
+            $curl = curl_init();
+            if (FALSE === $curl){
+                throw new Exception('Ошибка инициализации');
+            }
+            curl_setopt_array($curl, $array_curl);
+            $response = curl_exec($curl);
+            if (FALSE === $response){
+                throw new Exception(curl_error($curl), curl_errno($curl));
+            }
+            $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            if (200 != $http_status){
+                throw new Exception($response, $http_status);
+            }
+            curl_close($curl);
+        }
+        //обработка исключений
+        catch(Exception $e){
+            $response= $e->getCode() . $e->getMessage();
+            echo $Params['symbol'], ': ', $response, '<br/>';
+        }
+        //ответ всегда масив
+        if (!is_array($response)) {
+            $array = json_decode($response, true);
+            return $array;
+        }
+        return $response;
+    }
+
+    //*********************************** МОИ ****************************************
+    // key(array_slice($myTrades, -1, 1, true)) последний ключ масива
+    //посмотреть масив
+    public function show($array){
+        // foreach ($array as $key => $value) {
+        //     if (is_array($value)) {
+        //         $this->show($value);
+        //     }else{
+        //         echo $key,' => ', $value, '<br/>';
+        //     }
+        // }
+
+        print_r('<pre>');
+        print_r($array);
+        print_r('</pre>');
+
+        // echo  '<table border="1">';
+        //         foreach ($array as $key1 => $value) {
+        //             // if (is_array($value)) {
+        //             //     $this->show($value);
+        //             // }
+        //             echo "<tr >";
+        //                     if ( $i == 0) {
+        //                         foreach ($value as $key => $value) {
+        //                             echo "<th>", $key, '</th>';
+        //                         }
+        //                         $i++;
+        //                     }else{
+        //                         foreach ($value as $key => $value) {
+        //                             echo "<td>", $value, '</td>';
+        //                         }
+        //                     }
+        //             echo '</tr>';
+        //         }
+        // echo '</table>';
+    }
+    //посмотреть масив таблицей
+    public function showArrayTable($array){
+        echo  "<table border='1'>";
+        $i = $sum = 0;
+        if (!is_array($array)) {
+           return;
+        }
+        foreach ($array as $key1 => $value1) {
+
+                    if ( $i == 0) {
+                        echo "<tr>";
+                        foreach ($value1 as $key => $value) {
+                            echo '<th>', $key, '</th>';
+                        }
+                        echo '</tr>';
+                        $i++;
+                    }
+                    echo "<tr>";
+                    if (is_array($value1)) {
+                       foreach ($value1 as $key => $value) {
+                            if (stripos($key, 'time')|| $key=='0' || $key=='0') {
+                                echo '<td>', date("Y-m-d H:i:s", $value/1000), '</td>';
+                            }elseif($key == 'symbol'){
+                                echo '<td><a href="https://www.binance.com/ru/trade/'.$value1['asset'].'_'.str_replace($value1['asset'], '', $value1['symbol']).'" target="_blank">'. $value.'</a></td>';
+                            }elseif($key == 'BUYSymbol'){
+                                echo '<td><a href="https://www.binance.com/ru/trade/'.$value1['asset'].'_'.str_replace($value1['asset'], '', $value1['BUYSymbol']).'" target="_blank">'. $value.'</a></td>';
+                            }else{
+                                echo '<td>', $value, '</td>';
+                            }
+                        }
+                    }else{
+
+                        echo '<td>   ', $value1, '   </td>';
+                    }
+
+                     echo '</tr>';
+        }
+
+        echo '</table><br/>';
+    }
+    //посмотреть масив таблицей сделок
+    public function showArrayTableOrders($array, $usdPrice){
+        echo  "<table border='1'>";
+        $i = 0;
+        foreach ($array as $key => $value) {
+                  if ($value['time'] < round(microtime(true) * 1000)-3600000 || $value['side']=='BUY' ) {
+                    // break;
+                    continue;
+                  }
+                    if ( $i == 0) {
+                        echo "<tr>";
+                        echo '<th>', 'Дата и время', '</th>';
+                        echo '<th>', 'Пара', '</th>';
+                        echo '<th>', 'Тип', '</th>';
+                        echo '<th>', 'Сторона', '</th>';
+                        echo '<th>', 'Цена', '</th>';
+                        echo '<th>', 'Средняя цена', '</th>';
+                        echo '<th>', 'Количество', '</th>';
+                        echo '<th>', 'Всего', '</th>';
+                        echo '<th>', 'Всего USD', '</th>';
+                        echo '<th>', '* $ МАРЖА $ *', '</th>';
+                        echo '<th>', 'Цена закупки', '</th>';
+                        echo '</tr>';
+                        $i++;
+                    }
+
+                        echo "<tr>";
+                        echo '<td>', date("Y-m-d H:i:s", $value['time']/1000), '</td>';
+                        echo '<td>', $value['symbol'], '</td>';
+                        echo '<td>', $value['type'], '</td>';
+                        echo '<td>', $value['side']=='BUY'?'Купил':'Продал', '</td>';
+                        echo '<td>', (float)$value['price'], '</td>';
+                        echo '<td>', round((float)$value['cummulativeQuoteQty']/$value['executedQty'],8), '</td>';
+                        echo '<td>', $value['executedQty'], '</td>';
+                        echo '<td>', $value['side']=='BUY'?-1*$value['cummulativeQuoteQty']:$value['cummulativeQuoteQty'], '</td>';
+                        echo '<td>', round($value['sumUSD'], 2) , '</td>';
+                        echo '<td>', $value['marginUSD'], '</td>';
+                        echo '<td>', $value['lastpriceSELL'] , '</td>';
+
+
+
+                       // echo '<td>'.$array[$key+1]['cummulativeQuoteQty']. '</td>';
+
+                        echo '</tr>';
+                       $i++;
+
+        }
+        echo '</table><br/>';
+
+    }
+    //Сохранение в файла
+    public function saveFile($array, $filename){
+
+        if (!mkdir($filename, 0777, true)) {
+            die('Не удалось создать директории...');
+        }
+
+
+        $data = serialize($array);                  // PHP формат сохраняемого значения.
+        // $data = json_encode($accountBalance);    // JSON формат сохраняемого значения.
+        file_put_contents($filename, $data);  // Запись.
+    }
+    //Чтение с файла
+    public function readFile($filename){
+        $data = file_get_contents($filename);      // Чтение.
+        $array = unserialize($data);                     // PHP формат сохраняемого значения.
+        // $accountBalance = json_decode($data, TRUE);   // Если нет TRUE то получает объект, а не массив.
+        return $array;
+    }
+//Получить баланс АКТИВОВ + баланс остатка в BTC и USD
+    public function accountBalance($base=''){
+
+
+        $sumtotal_BTC = $sumtotal_USD='';
+        $Balance = array();
+        $Account = $this->account(array());
+
+        foreach ($Account['balances'] as $key => $value) {
+            // echo $value['asset'], "<br/>";
+            //общий остаток валюты
+            if (($value['locked']>0 || $value['free']>0) &&  isset($value['asset']) && $value['asset'] !== '') {
+                $Balance[$value['asset']]['asset']=$value['asset'];
+                $Balance[$value['asset']]['free'] = (float)$value['free'];
+                $Balance[$value['asset']]['locked'] = (float)$value['locked'];
+
+                $Balance[$value['asset']]['total'] = $value['locked']+$value['free'];
+                $Balance[$value['asset']]['min'] = '';
+
+                $Balance[$value['asset']]['kursBTC'] = '';
+                $Balance[$value['asset']]['kursUSD'] = '';
+
+                $Balance[$value['asset']]['total_BTC'] = '';
+                $Balance[$value['asset']]['total_USD'] = '';
+
+            }
+            // if (in_array($value['asset'], array_keys($base))) {
+            //     $Balance[$value['asset']]['base'] = 'YUS';
+            // }
+
+        }
+        // $this->show($Balance);
+        //Определяем баланс остатка в BTC, ETH, USDT
+        if ($tickerPrice =='') {
+           $tickerPrice = $this->tickerPrice(array());
+        }
+        // $this->show($tickerPrice);
+
+        foreach ($Balance as $key => $value) {
+            $kurs = $this->kurs($key, $tickerPrice);
+            $Balance[$key]['kursBTC'] = $kurs['kursBTC'];
+            $Balance[$key]['kursUSD'] = (float)$kurs['kursUSD'];
+
+            if ($key=='BTC') {
+
+                $Balance[$key]['total_BTC'] = number_format($value['total']/ $kurs['kursBTC'] , 8, '.', '');
+                $Balance[$key]['total_USD'] = number_format($value['total']*$kurs['kursUSD'], 2, '.', '');
+
+            }elseif($key=='USDT') {
+
+
+                $Balance[$key]['total_USD'] = number_format($value['total'], 2, '.', '');
+                $Balance[$key]['total_BTC'] = number_format($value['total']* $kurs['kursBTC'] , 8, '.', '');
+
+            }else{
+                if($tickerPricesymbol = array_values($this->multiSearch($tickerPrice, array('symbol'=>$key.'USDT'))) ) {
+
+                    $Balance[$key]['total_USD'] = number_format($value['total'] * $kurs['kursUSD'], 2, '.', '');
+                    $kursBTC_USDT = array_values($this->multiSearch($tickerPrice, array('symbol'=>'BTCUSDT')))[0]['price'];
+                    $Balance[$key]['total_BTC'] = number_format($Balance[$key]['total_USD'] / $kursBTC_USDT , 8, '.', '');
+
+                }else {
+
+                    $Balance[$key]['total_BTC'] = number_format($value['total'] * $kurs['kursBTC'], 8, '.', '');
+                    $kursBTC_USDT = array_values($this->multiSearch($tickerPrice, array('symbol'=>'BTCUSDT')))[0]['price'];
+                    $Balance[$key]['total_USD'] = number_format($Balance[$key]['total_BTC'] * $kursBTC_USDT, 2, '.', '');
+
+                }
+            }
+
+        }
+
+        return  $Balance;
+    }
+
+    //Получить курс в BTC и USD
+    public function kurs($key, $tickerPrice=''){
+        if ($tickerPrice =='') {
+           $tickerPrice = $this->tickerPrice(array());
+        }
+        // $this->show($tickerPrice);
+        $kurs=array();
+        $kurs['base '] = $key;
+        $kurs['kursBTC'] = '';
+        $kurs['kursUSD'] = '';
+
+        //Определяем курс BTC, USDT
+            if ($key=='BTC') {
+                $kurs['kursUSD'] = array_values($this->multiSearch($tickerPrice, array('symbol'=>'BTCUSDT')))[0]['price'];
+                $kurs['kursBTC'] =  1;
+            }elseif($key=='USDT') {
+                $kurs['kursUSD'] =  1;
+                $kursBTC_USDT = array_values($this->multiSearch($tickerPrice, array('symbol'=>'BTCUSDT')))[0]['price'];
+                $kurs['kursBTC'] =  number_format($kurs['kursUSD']/$kursBTC_USDT, 8, '.', '');
+            }else{
+                $kursBTC_USDT = array_values($this->multiSearch($tickerPrice, array('symbol'=>'BTCUSDT')))[0]['price'];
+                if($tickerPricesymbol = array_values($this->multiSearch($tickerPrice, array('symbol'=>$key.'USDT'))) ) {
+                    $kurs['kursUSD'] =  number_format($tickerPricesymbol[0]['price'], 8, '.', '');
+                    $kurs['kursBTC'] =  number_format($kurs['kursUSD']/$kursBTC_USDT, 8, '.', '');
+                }else{
+                    $tickerPricesymbol = array_values($this->multiSearch($tickerPrice, array('symbol'=>$key.'BTC')));
+                    $kurs['kursBTC'] =  number_format($tickerPricesymbol[0]['price'], 8, '.', '');
+                    $kurs['kursUSD'] =  number_format($kurs['kursBTC']*$kursBTC_USDT, 8, '.', '');
+                }
+            }
+        return  $kurs;
+    }
+
+    //Получить информацию и варианты о symbol для конкретного asset или по списку конкретных symbols (масив)
+    public function marketsSymbolInfo($AccountBalance, $exchangeInfo){
+        foreach ($AccountBalance as $keyasset => $valueasset) {
+            if ($valueasset['total_BTC']> 0.001) {
+                foreach ($exchangeInfo['symbols'] as $key => $value) {
+                    if ($value['quoteAsset']== $keyasset) {
+                        $symbol[$keyasset][$value['symbol']]=$value;
+                    }
+                }
+            }
+        }
+        return  $symbol;
+    }
+    //Наростающая груперовка открытых ордеров 0,5,10,25,50,99
+    public function depthTotal($symbol){
+        $depth = $this->depth($symbol);
+
+        // $this->show($depth);
+        $interval = array(0,5,10,25,50,99);
+        $sum_bids = $sum_asks = $bids = $asks = 0;
+
+        for ($i=0; $i < 100; $i++) {
+            $sum_asks += $depth['asks'][$i][1];
+            $sum_bids += $depth['bids'][$i][1];
+            if (in_array($i, $interval)) {
+                $depthTotal[$i]['askQty'] = $sum_asks;
+                $depthTotal[$i]['askPrice'] = $asks = isset($depth['asks'][$i][0])?$depth['asks'][$i][0]:$asks;
+                $depthTotal[$i]['bidQty'] =$sum_bids;
+                $depthTotal[$i]['bidPrice'] =  $bids = isset($depth['bids'][$i][0])?$depth['bids'][$i][0]:$bids;
+                $depthTotal[$i]['spros'] = round($sum_bids/$sum_asks, 2);
+            }
+
+        }
+
+        return  $depthTotal;
+    }
+    //Наростающая груперовка последних сделок
+    public function depthTotal2($symbol){
+        $depth = $this->depth($symbol);
+        $interval = array(0,5,10,25,50,99);
+        $sum_bids = $sum_asks = 0;
+        foreach ($interval as $interkey => $inter) {
+            foreach ($depth['asks'] as $key => $value) {
+                $sum_asks += $value[1];
+                if ($key == $inter) {
+                    $depthTotal[$key]['askQty']= $sum_asks;
+                    $depthTotal[$key]['askPrice']= $value[0];
+                }
+            }
+            foreach ($depth['bids'] as $key => $value) {
+                $sum_bids += $value[1];
+                if ($key == $inter) {
+                    $depthTotal[$key]['bidQty']=$sum_bids;
+                    $depthTotal[$key]['bidPrice']=$value[0];
+                    $depthTotal[$key]['spread']=$depthTotal[$key]['askPrice']-$depthTotal[$key]['bidPrice'];
+                    $depthTotal[$key]['spread_%']=round($depthTotal[$key]['spread']/($depthTotal[$key]['askPrice']+$depthTotal[$key]['bidPrice'])/2*100, 4);
+                    $depthTotal[$key]['spros']=round($depthTotal[$key]['bidQty']/$depthTotal[$key]['askQty'], 2);
+                }
+            }
+        }
+
+        return  $depthTotal;
+    }
+    //Поиск по вложеным массивам по нескольким условиям +
+    public static function multiSearch(array $array, array $pairs){
+        $found = array();
+        foreach ($array as $aKey => $aVal) {
+            $coincidences = 0;
+            foreach ($pairs as $pKey => $pVal) {
+                if (array_key_exists($pKey, $aVal) && $aVal[$pKey] == $pVal) {
+                    $coincidences++;
+                }
+            }
+            if ($coincidences == count($pairs)) {
+                $found[$aKey] = $aVal;
+            }
+        }
+
+        return $found;
+    }
+
+    //Определяем комисию
+    public function tradeFeeKom($symbol = ''){
+        $tradeFee= $this->tradeFee($symbol);
+        // $this->show($tradeFee);
+        $trade = array();
+        foreach ($tradeFee['tradeFee'] as $key => $value) {
+            $trade[$value['symbol']] = $value;
+        }
+        return  $trade;
+    }
+    //определяем что будем делать продажа(ASK) или покупка(BID)
+    public function ASK_BID($symbol){
+        if ($symbol['balance']['total']>0) {
+            $ASK_BID = 'ASK';
+        }else{
+            $ASK_BID = 'BID';
+        }
+        return  $ASK_BID;
+    }
+    //Определяем бал по спросу
+    public function ball_depthTotal($symbol, $depthTotal){
+        // $depthTotal= $this->depthTotal($symbol);
+        $ball = $sum = $i = 0;
+        foreach ($depthTotal as $key => $value) {
+           if ($key !=0) {
+               $sum += $value['spros'];
+               $i++;
+           }
+        }
+        $return['spros'] = $sum/$i;
+
+        return $return ;
+    }
+    //Определяем бал по последним сделкам
+    public function ball_trades($symbol){
+        $trades= $this->trades($symbol);
+        //находим минимальную и максимальную цену
+
+        // $ball=0;
+        // foreach ($depthTotal as $key => $value) {
+        //    if ($value['spros']<=0.95) {
+        //        $ball+=-1;
+        //    }elseif ($value['spros']>0.95 && $value['spros']<=1.3) {
+        //        $ball+= 0;
+        //    }elseif ($value['spros']>1.3 && $value['spros']<=2) {
+        //        $ball+= 1;
+        //    }elseif ($value['spros']>2) {
+        //        $ball+= 2;
+        //    }
+        // }
+        return  $ball;
+    }
+    //Определяем бал по свечам
+    public function ball_klines($symbol){
+        //,'3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M'
+        $array_interval = array('1m');
+        foreach ($array_interval as $interval) {
+            $klines = $this->klines($symbol);
+            foreach ($klines as $key => $klin) {
+               $klines[$key]['%'] =  $klin['4'] /  $klin['1'];
+            }
+
+            $this->showArrayTable($klines);
+            // $this->show(max($klines));
+        }
+        // die();
+        //находим минимальную и максимальную цену
+
+        // $ball=0;
+        // foreach ($depthTotal as $key => $value) {
+        //    if ($value['spros']<=0.95) {
+        //        $ball+=-1;
+        //    }elseif ($value['spros']>0.95 && $value['spros']<=1.3) {
+        //        $ball+= 0;
+        //    }elseif ($value['spros']>1.3 && $value['spros']<=2) {
+        //        $ball+= 1;
+        //    }elseif ($value['spros']>2) {
+        //        $ball+= 2;
+        //    }
+        // }
+        return  $ball;
+    }
+     //Определяем максимум минимум 0,5,15,30,60,120,240,480 мин
+    public function max_min($klines){
+        // $this->show($klines);
+        $array_day = array(0,5,15,30,60,120,240,480);
+        $max_min = array();
+        $top = $max = $klines[0]['2'];
+        $down = $min = $klines[0]['3'];
+
+                $max_min['trend']['down'] = '';
+                $max_min['trend']['down_%'] = '';
+                $max_min['trend']['count_down'] = '';
+
+        $flagdown = $average_0_down = $count = 0;
+        foreach ($klines as $key => $klin) {
+
+            if (-1 == bccomp((string)$max, (string)$klin['2'], 8))  $max = $klin['2'];
+
+            if (1 == bccomp((string)$min, (string)$klin['3'], 8))  $min = $klin['3'];
+
+                //
+            if ($flagdown == 0 && -1 == bccomp((string)$klin['3'], (string)$klines[$key+1]['3'], 8)) {
+                $max_min['trend']['down'] = $klin['3']-$down;
+                $max_min['trend']['down_%'] = $max_min['trend']['down']*100/$klin['3'];
+                $max_min['trend']['count_down'] += 1;
+            }else{
+                $flagdown = 1;
+            }
+
+
+            if (in_array($key, $array_day)) {
+                $max_min[$key]['max'] = $max;
+                $max_min[$key]['min'] = $min;
+                $max_min[$key]['spred'] = $max-$min;
+                $max_min[$key]['spred_%'] = $max_min[$key]['spred']*100/$max_min[$key]['min'];
+                $max_min[$key]['date'] = date("Y-m-d H:i:s", $klin['0']/1000);
+            }
+
+        }
+        return  $max_min;
+    }
+     //Определяем тренд
+    // public function trend($IntervalBUY, $klines){
+    //     $this->show($klines);
+    //      //Анализируем последние свечи
+    //     $t = $P = $shema ='';
+    //     for ($i=$IntervalBUY['countKlines']; $i > 0; $i--) {
+    //         //определяем тренд по закрытию свечи
+    //         if ($klines[$i+1][4]<$klines[$i][4]) {
+    //             $t .= '+';
+    //         }else{
+    //             $t .= '-';
+
+    //         }
+    //     }
+    //     //проверяем сответствие тренда свечей и shemaTrend
+    //     if (in_array($t, $IntervalBUY['shemaTrend'])) {
+    //         $shema = 'yes';
+    //     }else{
+    //         $shema = 'nou';
+    //     }
+    //     //находим процент изминения
+    //     $P = ($klines[$IntervalBUY['countKlines']][4]-$klines[0]][4])*100/$klines[$IntervalBUY['countKlines']][4];
+
+
+    //     return  array('p' => $P , 'trend' => $t, 'shemaTrend' => $IntervalBUY['shemaTrend'], 'status' => $shema);
+    // }
+
+
+    //сравниваем два числа с плавающей точкой
+    public function compare($price, $price2){
+        $price *=100000000;
+        $price2 *=100000000;
+        if ($price == $price2) {
+            return 0;
+        }
+        if ($price > $price2) {
+            return 1;
+        }
+        if ($price < $price2) {
+            return -1;
+        }
+    }
+
+    //округляем цену или количество кратно min
+    public function round_min($temp, $min){
+        $temp = (float)$temp;
+            $round_n = 0;
+            $n = 1;
+            if ($min == 1) {
+
+                return floor($temp);
+            }else{
+                for ($i=1; $i < 8; $i++) {
+                    if ($min < 1) {
+                        $min = $min *10;
+                        $round_n = $i;
+                    }
+                }
+                for ($i=0; $i < $round_n; $i++) {
+                    $n *=10;
+                }
+               return number_format(floor($temp * $n) / $n, $round_n+1, '.', '');
+            }
+
+
+    }
+
+
+
+    //*********************************** binance ****************************************
+    //*********************************** ОБЩЕЕ ****************************************
+    //Тест API
+    public function ping(){
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/ping');
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Время сервера
+    public function time(){
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/time');
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Состояние системы*
+    public function systemStatus(){
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/systemStatus.html');
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Текущие правила биржевой торговли и символьная информация
+    public function exchangeInfo(){
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/exchangeInfo');
+        return  $this->curl($Endpoints, $Params);
+    }
+
+    //*********************************** АКАУНТ ****************************************
+    //История депозитов*
+    public function depositHistory($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['asset'])? '&asset='.$Params['asset']: '';//0(0:pending,6: credited but cannot withdraw, 1:success)
+        $ParamsCurl .= isset($Params['status'])? '&status='.$Params['status']: '';
+        $ParamsCurl .= isset($Params['startTime'])? '&startTime='.$Params['startTime']: '';
+        $ParamsCurl .= isset($Params['endTime'])? '&endTime='.$Params['endTime']: '';
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/depositHistory.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+     //ЗАКРЫТО адрес депозита*
+    public function depositAddress($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        $ParamsCurl .= '&asset='.$Params['asset'];
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['status'])? '&status='.$Params['status']: '';//0(0:pending,6: credited but cannot withdraw, 1:success)
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/depositAddress.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Статус акаунта*
+    public function accountStatus($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/accountStatus.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Деталь актива и остатки на счетах
+    public function account($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/account?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Торговый статус API аккаунта*
+    public function apiTradingStatus($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/apiTradingStatus.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Конвертировать пылев активы в BNB
+    public function dust($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        foreach ($Params as $key => $value){
+            if($key == 'asset'){
+                $ParamsCurl .= '&asset='.$value;
+            }
+        }
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'POST', 'points'=>'/sapi/v1/asset/dust?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return $this->curl($Endpoints, $Params);
+    }
+    //Получить небольшие суммы активов оторые обменялись на BNB
+    public function userAssetDribbletLog($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/userAssetDribbletLog.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return $this->curl($Endpoints, $Params);
+    }
+    //Сбор комиссии за торговлю
+    public function tradeFee($Params=''){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['symbol'])? '&symbol='.$Params['symbol']: '';
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/tradeFee.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return $this->curl($Endpoints, $Params);
+    }
+    //Деталь актива
+    public function assetDetail($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/assetDetail.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return $this->curl($Endpoints, $Params);
+    }
+
+    //*********************************** ДАНЫЕ ****************************************
+    //Книга открытых заказов
+    public function depth($Params){
+        //обязательные параметры
+        $ParamsCurl = 'symbol='.$Params['symbol'];
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['limit'])?'&limit='.$Params['limit']: ''; //Default 100; max 1000
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/depth?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Список последних сделок
+    public function trades($Params){
+        //обязательные параметры
+        $ParamsCurl = 'symbol='.$Params['symbol'];
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['limit'])?'&limit='.$Params['limit']: ''; //Default 500; max 1000
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/trades?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Список старых рыночны сделок ДУБЛИРУЕТ ДАНЫЕ trades
+    public function historicalTrades($Params){
+        //обязательные параметры
+        $ParamsCurl = isset($Params['symbol'])?'symbol='.$Params['symbol']: '';
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['limit'])?'&limit='.$Params['limit']: ''; //DeDefault 500; max 1000.
+        $ParamsCurl .= isset($Params['fromId'])?'&fromId='.$Params['fromId']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/historicalTrades?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Сжатый список сделок которые исполняются одновременно из одного и того же ордера с одинаковой ценой, количество агрегировано
+    public function aggTrades($Params){
+        //обязательные параметры
+        $ParamsCurl = 'symbol='.$Params['symbol'];
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['limit'])?'&limit='.$Params['limit']: ''; //Default 500; max 1000.
+        $ParamsCurl .= isset($Params['fromId'])?'&fromId='.$Params['fromId']: '';//ID to get aggregate trades from INCLUSIVE
+        $ParamsCurl .= isset($Params['startTime'])?'&startTime='.$Params['startTime']: '';
+        $ParamsCurl .= isset($Params['endTime'])?'&endTime='.$Params['endTime']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/aggTrades?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Подсвечники для символа
+    public function klines($Params){
+        //обязательные параметры
+        $ParamsCurl = 'symbol='.$Params['symbol'];
+        $ParamsCurl .= isset($Params['interval'])?'&interval='.$Params['interval']: '&interval=1m'; //1m/3m/5m/15m/30m/1h/2h/4h/6h/8h/12h/1d/3d/1w/1M
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['limit'])?'&limit='.$Params['limit']: ''; //Default 500; max 1000.
+        $ParamsCurl .= isset($Params['startTime'])?'&startTime='.$Params['startTime']: '';
+        $ParamsCurl .= isset($Params['endTime'])?'&endTime='.$Params['endTime']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/klines?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Текущая средняя цена
+    public function avgPrice($Params){
+        //обязательные параметры
+        $ParamsCurl = 'symbol='.$Params['symbol'];
+        //НЕ обязательные параметры
+
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/avgPrice?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Статистика изменения цены за 24 часа
+    public function ticker24hr($Params = ''){
+        //обязательные параметры
+
+        //НЕ обязательные параметры
+        $ParamsCurl = isset($Params['symbol'])?'&symbol='.$Params['symbol']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v1/ticker/24hr?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Последняя цена за символ или символы
+    public function tickerPrice($Params){
+        //обязательные параметры
+
+        //НЕ обязательные параметры
+        $ParamsCurl = isset($Params['symbol'])?'&symbol='.$Params['symbol']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/ticker/price?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Лучшая цена / кол-во в книге заказов на символ или символы
+    public function bookTicker($Params){
+        //обязательные параметры
+
+        //НЕ обязательные параметры
+        $ParamsCurl = isset($Params['symbol'])?'&symbol='.$Params['symbol']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/ticker/bookTicker?'.$ParamsCurl);
+        return  $this->curl($Endpoints, $Params);
+    }
+
+    //*********************************** ОРДЕРА ****************************************
+     //Новый Заказ
+    public function orderNEW($Params){
+
+        //обязательные параметры
+        $ParamsCurl = 'symbol='.$Params['symbol'];
+        $ParamsCurl .= '&side='.$Params['side']; //BUY, SELL
+        $ParamsCurl .= '&type='.$Params['type']; //LIMIT,MARKET,STOP_LOSS,STOP_LOSS_LIMIT,TAKE_PROFIT,TAKE_PROFIT_LIMIT,LIMIT_MAKER
+        $ParamsCurl .= '&quantity='.$Params['quantity'];//Количество
+        $ParamsCurl .= '&timestamp='.$this->timestamp();
+
+            /*Дополнительные обязательные параметры
+            Type                Параметры
+            LIMIT               timeInForce, quantity, price
+            MARKET              quantity
+            STOP_LOSS           quantity, stopPrice
+            STOP_LOSS_LIMIT     timeInForce, quantity, price, stopPrice
+            TAKE_PROFIT         quantity, stopPrice
+            TAKE_PROFIT_LIMIT   timeInForce, quantity, price, stopPrice
+            LIMIT_MAKER         quantity, price
+
+            Другая информация:
+            LIMIT_MAKER - это ордера LIMIT, которые будут отклонены, если они сразу же совпадут и будут торговаться как покупатель.
+            STOP_LOSS и TAKE_PROFIT выполнят ордер MARKET при достижении стоп-цены.
+            Любой заказ типа LIMIT или LIMIT_MAKER можно сделать заказом айсберга, отправив icebergQty.
+            Любой заказ с айсбергом ДОЛЖЕН иметь timeInForce, установленный в GTC.
+
+            Правила цены триггерного ордера по отношению к рыночной цене для версий MARKET и LIMIT:
+            Цена выше рыночной: STOP_LOSS BUY, TAKE_PROFIT SELL
+            Цена ниже рыночной: STOP_LOSS SELL, TAKE_PROFIT BUY
+            */
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['timeInForce']) && $Params['type']!='MARKET'? '&timeInForce='.$Params['timeInForce']: '';   //GTC, IOC, FOK
+        $ParamsCurl .= isset($Params['price']) && $Params['type']!='MARKET'? '&price='.$Params['price']: '';
+        $ParamsCurl .= isset($Params['newClientOrderId'])? '&newClientOrderId='.$Params['newClientOrderId']: '';
+        $ParamsCurl .= isset($Params['stopPrice'])? '&stopPrice='.$Params['stopPrice']: '';
+        $ParamsCurl .= isset($Params['icebergQty'])? '&icebergQty='.$Params['icebergQty']: ''; //срок выполнения
+        $ParamsCurl .= isset($Params['newOrderRespType'])? '&newOrderRespType='.$Params['newOrderRespType']: '';
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'POST', 'points'=>'/api/v3/order?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Отмена заказа (ТОРГОВЛЯ)
+    public function orderDELETE($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        $ParamsCurl .= '&symbol='.$Params['symbol'];
+        $ParamsCurl .= '&orderId='.$Params['orderId']; //или origClientOrderId
+        // $ParamsCurl .= '&origClientOrderId='.$Params['clientOrderId'];
+
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['newClientOrderId'])? '&newClientOrderId='.$Params['newClientOrderId']: ''; //Автоматически генерируется
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'DELETE', 'points'=>'/api/v3/order?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints);
+    }
+    //Проверьте статус заказа
+    public function orderSTATUS($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        $ParamsCurl .= '&symbol='.$Params['symbol'];
+
+        $ParamsCurl .= '&orderId='.$Params['orderId']; //или origClientOrderId
+        // $ParamsCurl .= '&origClientOrderId='.$Params['clientOrderId'];
+
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/order?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Проверьте открытые заказы
+    public function orderOPEN($Params){
+      //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['symbol'])? '&symbol='.$Params['symbol']: '';
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/openOrders?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints);
+    }
+    //Получить все заказы на счетах; активный, отмененный или заполненный
+    public function allOrders($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        $ParamsCurl .= '&symbol='.$Params['symbol'];
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['orderId'])? '&orderId='.$Params['orderId']: '';
+        $ParamsCurl .= isset($Params['startTime'])? '&startTime='.$Params['startTime']: '';
+        $ParamsCurl .= isset($Params['endTime'])? '&endTime='.$Params['endTime']: '';
+        $ParamsCurl .= isset($Params['limit'])? '&limit='.$Params['limit']: '';
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/allOrders?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+    //Получить сделки для конкретного счета и символа
+    public function myTrades($Params){
+        //обязательные параметры
+        $ParamsCurl = 'timestamp='.$this->timestamp();
+        $ParamsCurl .= '&symbol='.$Params['symbol'];
+        //НЕ обязательные параметры
+        $ParamsCurl .= isset($Params['fromId'])? '&fromId='.$Params['fromId']: '';
+        $ParamsCurl .= isset($Params['startTime'])? '&startTime='.$Params['startTime']: '';
+        $ParamsCurl .= isset($Params['endTime'])? '&endTime='.$Params['endTime']: '';
+        $ParamsCurl .= isset($Params['limit'])? '&limit='.$Params['limit']: '';
+        $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
+        //формируем конечную точку
+        $Endpoints = array('quest' => 'GET', 'points'=>'/api/v3/myTrades?'.$ParamsCurl.$this->signature($ParamsCurl));
+        return  $this->curl($Endpoints, $Params);
+    }
+
+    //OCO (TRADE)
+
+    //маржинального счета (MARGIN)
+
+    //Отправить запрос на снятие (НЕ ГОТОВО)
+    // public function withdraw(){
+    //     $Endpoints = array('POST', '/wapi/v3/withdraw.html');
+    //     return  $this->curl($Endpoints);
+    // }
+
+    //Получить историю снятие
+    // public function withdrawHistory(){
+    //     $Endpoints = array('GET', '/wapi/v3/withdrawHistory.html');
+    //     return  $this->curl($Endpoints);
+    // }
+
+}

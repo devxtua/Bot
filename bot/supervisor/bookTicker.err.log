@@ -1,0 +1,136 @@
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 73
+PHP Warning:  unlink(D:\binance\ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 76
+PHP Warning:  filemtime(): stat failed for D:\binance\tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 88
+PHP Warning:  unlink(D:\binance\exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 93
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 73
+PHP Warning:  unlink(D:\binance\ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 76
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\exchangeInfo.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 93
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 88
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 88
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 73
+PHP Warning:  unlink(D:\binance\ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 76
+PHP Warning:  filemtime(): stat failed for D:\binance\exchangeInfo.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 93
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\exchangeInfo.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 93
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  unlink(D:\binance\tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 88
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for D:\binance\ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 73
+PHP Warning:  unlink(D:\binance\ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 76
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 82
+PHP Warning:  unlink(ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 85
+PHP Warning:  filemtime(): stat failed for tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 94
+PHP Warning:  unlink(tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 97
+PHP Warning:  unlink(exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 102
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 79
+PHP Warning:  unlink(ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 82
+PHP Warning:  filemtime(): stat failed for tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 91
+PHP Warning:  unlink(tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 94
+PHP Warning:  unlink(exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 99
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 79
+PHP Warning:  unlink(ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 82
+PHP Warning:  filemtime(): stat failed for tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 91
+PHP Warning:  unlink(tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 94
+PHP Warning:  unlink(exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 99
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 91
+PHP Warning:  unlink(tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 94
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 79
+PHP Warning:  unlink(ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 82
+PHP Warning:  filemtime(): stat failed for exchangeInfo.txt in /home/pas/bot/model/binance_c.php on line 91
+PHP Warning:  unlink(exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 99
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for exchangeInfo.txt in /home/pas/bot/model/binance_c.php on line 91
+PHP Warning:  unlink(exchangeInfo.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 99
+PHP Notice:  Undefined variable: data in /home/pas/bot/model/functions_c.php on line 399
+PHP Warning:  filemtime(): stat failed for ticker24hr.txt in /home/pas/bot/model/binance_c.php on line 79
+PHP Warning:  unlink(ticker24hr.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 82
+PHP Warning:  filemtime(): stat failed for tradeFeeKom.txt in /home/pas/bot/model/binance_c.php on line 91
+PHP Warning:  unlink(tradeFeeKom.txt): No such file or directory in /home/pas/bot/model/binance_c.php on line 94
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12
+PHP Fatal error:  Uncaught ArgumentCountError: Too few arguments to function Users::__construct(), 0 passed in /home/pas/bot/bookTicker.php on line 19 and at least 1 expected in /home/pas/bot/model/user_c.php:12
+Stack trace:
+#0 /home/pas/bot/bookTicker.php(19): Users->__construct()
+#1 {main}
+  thrown in /home/pas/bot/model/user_c.php on line 12

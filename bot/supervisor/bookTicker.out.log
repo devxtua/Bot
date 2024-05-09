@@ -1,0 +1,16 @@
+429{"code":-1003,"msg":"Too much request weight used; current limit is 1200 request weight per 1 MINUTE. Please use the websocket for live updates to avoid polling the API."}<br/>Array
+(
+    [quest] => GET
+    [points] => /api/v3/ticker/bookTicker?
+)
+<br/>429{"code":-1003,"msg":"Too much request weight used; current limit is 1200 request weight per 1 MINUTE. Please use the websocket for live updates to avoid polling the API."}<br/>Array
+(
+    [quest] => GET
+    [points] => /api/v3/time
+)
+<br/>host : 1612999617730 2021-02-11 01:26:57<br/>api  :  1970-01-01 02:00:00<br/>difference: -1612999617730<br/> КОНСТРУКТОР STOP429{"code":-1003,"msg":"Too much request weight used; current limit is 1200 request weight per 1 MINUTE. Please use the websocket for live updates to avoid polling the API."}<br/>Array
+(
+    [quest] => GET
+    [points] => /api/v3/time
+)
+<br/>host : 1612999619330 2021-02-11 01:26:59<br/>api  :  1970-01-01 02:00:00<br/>difference: -1612999619330<br/> КОНСТРУКТОР STOP

@@ -200,7 +200,7 @@ class Indicators{
         return $result;
     }
 
-        //индикатор  Цена закрытия последней свечи
+    //индикатор  Цена закрытия последней свечи
     public function indicator_klin_last_price($interval, $klin){
         $nickname = __FUNCTION__.'_'.$interval;
         //Заносим даные в масив индикаторов
@@ -248,7 +248,7 @@ class Indicators{
 
         return $result;
     }
-        // 2 индикатора  last_up $interval
+    // 2 индикатора  last_up $interval
     public function indicator_klines_last_up($interval, &$klines){
         $count = 0;
         $coef = 1;
@@ -275,7 +275,7 @@ class Indicators{
 
         return $result;
     }
-        // 2 индикатора  last_down $interval
+    // 2 индикатора  last_down $interval
     public function indicator_klines_level_avg_3_klin($interval, &$klines){
         $sum = $coef = 1;
         for ($i=count($klines)-1; $i > 3; $i--) {

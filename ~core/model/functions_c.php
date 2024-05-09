@@ -439,6 +439,7 @@ class Functions{
         return $array;
     }
 
+    
     //Поиск по вложеным массивам по нескольким условиям +
     public static function multiSearch(array $array, array $pairs){
         $found = array();
@@ -1015,14 +1016,15 @@ class Functions{
     public static function analytics_indicators($strateg, &$funded_klines){
         // Functions::show($strategies, 'strategies');
         // Functions::showArrayTable($funded_klines, 'Всего '.count($funded_klines));
-
+        // echo count($funded_klines), '<br/>';
         $finish = count($funded_klines);
         $klinesTest = $funded_klines;
         $test = [];
+        $skip = 10;//пропускаем количество для анализа
         //получаем индикаторы каждой свичи
-        for ($i=1000; $i < $finish; $i++) {
-            $start = $i-1000;
-            $klines = array_slice($klinesTest, $start, 1000);
+        for ($i= $skip; $i < $finish; $i++) {
+            $start = $i- $skip;
+            $klines = array_slice($klinesTest, $start, $skip);
             //анализируемый klin
             $klin = end($klines);
 
@@ -1050,18 +1052,19 @@ class Functions{
             }else{
                 $search = Functions::multiSearch($test, array('trend' => $trend));
             }
-
-            foreach (reset($search) as $key => $value) {
-                if (!stristr($key, 'indicator')) continue;
+            if(count($search)>0){
+                foreach (reset($search) as $key => $value) {
+                    if (!stristr($key, 'indicator')) continue;
                     $array_column = array_column($search, $key);
                     $array_indicator[$key]['indicator'] = $key;
-                    $array_indicator[$key][$trend.'_c'] = count($search);
-                    $array_indicator[$key][$trend.'_min'] = min($array_column);
-                    $array_indicator[$key][$trend.'_max'] = max($array_column);
+                    $array_indicator[$key][$trend . '_c'] = count($search);
+                    $array_indicator[$key][$trend . '_min'] = min($array_column);
+                    $array_indicator[$key][$trend . '_max'] = max($array_column);
 
-                        // $explodeDigits = explode('.', (string)$array_indicator[$key][$trend.'_max']);
-                        // $num = strlen((string)$explodeDigits[1]);
-                    $array_indicator[$key][$trend.'_avg'] = bcdiv(array_sum($array_column), $array_indicator[$key][$trend.'_c'],  8);
+                    // $explodeDigits = explode('.', (string)$array_indicator[$key][$trend.'_max']);
+                    // $num = strlen((string)$explodeDigits[1]);
+                    $array_indicator[$key][$trend . '_avg'] = bcdiv(array_sum($array_column), $array_indicator[$key][$trend . '_c'],  8);
+                }
             }
         }
 

@@ -1,0 +1,1 @@
+a:2:{s:5:"login";s:12:"380958279022";s:7:"binance";a:1:{s:6:"config";a:3:{s:3:"KEY";s:64:"7WDYbxAytNjWRo5jqz4ZFZp2v2J5UahQirEcOFlacaE7ykUQxQcGwQZcBwcFUUvH";s:3:"SEC";s:64:"0Ql01kwiBjx8jWzm7iA5CMfj4ODhBuUq8VutXdGTkNe8OsHTBoUWckQBr2LITseg";s:5:"Proxy";a:3:{s:2:"ip";s:0:"";s:5:"login";s:0:"";s:8:"password";s:0:"";}}}}

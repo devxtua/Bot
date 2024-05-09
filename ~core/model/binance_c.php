@@ -3,17 +3,19 @@
 class Binance{
     //рабочии
     private $KEY = '';
-    private $SEC = '';
-    private $URL = 'https://api.binance.com';
+    private $SEC = '';    
     private $Proxy = '';
 
+    private $DIR = '';
+    private $filetradeFeeKom = '';
+    private $fileexchangeInfo = '';
+    private $fileticker24hr = '';
+
+
+    private $URL = 'https://api.binance.com';
+    
+
     public $interval = array('1m'=> 60,'3m'=> 180,'5m'=> 300,'15m'=> 900,'30m'=> 1800,'1h'=> 3600,'2h'=> 7200,'4h'=> 14400,'6h'=> 21600,'8h'=> 28800,'12h'=>43200,'1d'=> 86400,'3d'=> 259200,'1w'=> 604800,'1M'=> 2592000);
-
-
-    private $filetradeFeeKom = 'D:\binance\tradeFeeKom.txt';
-    private $fileexchangeInfo = 'D:\binance\exchangeInfo.txt';
-    private $fileticker24hr = 'D:\binance\ticker24hr.txt';
-
 
 
     public $tradeFeeKom = array();
@@ -23,10 +25,11 @@ class Binance{
 
 
     //конструктор КЛАССА
-    public function __construct($KEY = '', $SEC = '', $Proxy = ''){
-        $this->KEY = $KEY;
-        $this->SEC = $SEC;
-        $this->Proxy = $Proxy;
+    public function __construct($DIR = ''){
+        $this->DIR = $DIR;
+        $this->filetradeFeeKom = $this->DIR.'tradeFeeKom.txt';
+        $this->fileexchangeInfo = $this->DIR.'exchangeInfo.txt';
+        $this->fileticker24hr = $this->DIR.'ticker24hr.txt';
 
         if ($this->ticker24hr = Functions::readFile($this->fileticker24hr)) {
         }
@@ -34,16 +37,12 @@ class Binance{
         }
         if ($this->exchangeInfo = Functions::readFile($this->fileexchangeInfo)) {
         }
-        if ($this->exchangeInfo = Functions::readFile($this->fileexchangeInfo)) {
-        }
+
 
         //Сверяем время API и
 
         $timestamp = $this->timestamp();
         $serverTime = $this->time()['serverTime'];
-
-
-
 
         if ($serverTime - $timestamp < -1000) {
             echo 'host : ', $timestamp, ' ',date("Y-m-d H:i:s", $timestamp/1000), "<br/>";
@@ -69,8 +68,8 @@ class Binance{
         $this->SEC = $SEC;
         $this->Proxy = $Proxy;
 
-        //Проверяем актуальность
-        if(time()-filemtime($this->fileticker24hr) > 100){
+        //Проверяем актуальность ticker24hr и обновляем 
+        if(time()-filemtime($this->fileticker24hr) > 60){
             //ticker24hr
             if ($this->ticker24hr = $this->ticker24hr()) {
                 unlink($this->fileticker24hr);
@@ -81,7 +80,7 @@ class Binance{
             }
         }
 
-        //Проверяем актуальность базовой информации и обновляем один раз в сутки
+        //Проверяем актуальность базовой информации и обновляем один раз в час
         if(time()-filemtime($this->filetradeFeeKom) > 3600 || time()-filemtime($this->fileexchangeInfo) > 3600){
             //Получаем актуальную информацию О комисиях
             if ($this->tradeFeeKom= $this->tradeFeeKom()) {
@@ -322,14 +321,15 @@ class Binance{
         if ($endTime == '') $endTime = time()*1000;
         if ($startTime =='') $startTime = $endTime - $this->interval[$strateg['interval']]*1000000;
         $startTime = $startTime - $this->interval[$strateg['interval']]*1000000;
+        $startTime = $startTime<0? 0 : $startTime;
         $funded = [];
-        while ($startTime < $endTime) {
-            $end = $startTime + $this->interval[$strateg['interval']]*1000000;
+        while ($startTime < time() * 1000) {
             $klines = $GLOBALS['Bin']->klines(array('symbol'=>$strateg['symbol'],
                                                     'interval' => $strateg['interval'],
                                                     'startTime' => $startTime,
                                                     'endTime' => $endTime,
                                                     'limit' => 1000));
+
             if (count($funded)>1){
                foreach ($klines as $k => $v) {
                   $time = array_column($funded, 0);
@@ -340,7 +340,7 @@ class Binance{
             }else{
                 $funded = $klines;
             }
-            $startTime = $end;
+            $startTime = end($klines)[6];
         }
         return $funded;
     }
@@ -393,7 +393,7 @@ class Binance{
     }
     //Состояние системы*
     public function systemStatus(){
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/systemStatus.html');
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/system/status');
         return  $this->curl($Endpoints);
     }
     //Текущие правила биржевой торговли и символьная информация
@@ -414,7 +414,7 @@ class Binance{
         $ParamsCurl .= isset($Params['endTime'])? '&endTime='.$Params['endTime']: '';
         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/depositHistory.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/capital/deposit/hisrec?'.$ParamsCurl.$this->signature($ParamsCurl));
         return  $this->curl($Endpoints);
     }
      //ЗАКРЫТО адрес депозита*
@@ -426,7 +426,7 @@ class Binance{
         $ParamsCurl .= isset($Params['status'])? '&status='.$Params['status']: '';//0(0:pending,6: credited but cannot withdraw, 1:success)
         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/depositAddress.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/capital/deposit/address?'.$ParamsCurl.$this->signature($ParamsCurl));
         return  $this->curl($Endpoints);
     }
     //Статус акаунта*
@@ -436,7 +436,7 @@ class Binance{
         //НЕ обязательные параметры
         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/accountStatus.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/account/status?'.$ParamsCurl.$this->signature($ParamsCurl));
         return  $this->curl($Endpoints);
     }
     //Деталь актива и остатки на счетах
@@ -456,7 +456,7 @@ class Binance{
         //НЕ обязательные параметры
         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/apiTradingStatus.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/account/apiTradingStatus?'.$ParamsCurl.$this->signature($ParamsCurl));
         return  $this->curl($Endpoints);
     }
     //Конвертировать пылев активы в BNB
@@ -481,7 +481,7 @@ class Binance{
         //НЕ обязательные параметры
         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/userAssetDribbletLog.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/asset/dribblet?'.$ParamsCurl.$this->signature($ParamsCurl));
         return $this->curl($Endpoints);
     }
     //Сбор комиссии за торговлю
@@ -492,7 +492,7 @@ class Binance{
         $ParamsCurl .= isset($Params['symbol'])? '&symbol='.$Params['symbol']: '';
         $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/tradeFee.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/asset/tradeFee?'.$ParamsCurl.$this->signature($ParamsCurl));
         return $this->curl($Endpoints);
     }
     //Деталь актива
@@ -502,7 +502,7 @@ class Binance{
         //НЕ обязательные параметры
          $ParamsCurl .= isset($Params['recvWindow'])? '&recvWindow='.$Params['recvWindow']: '';
         //формируем конечную точку
-        $Endpoints = array('quest' => 'GET', 'points'=>'/wapi/v3/assetDetail.html?'.$ParamsCurl.$this->signature($ParamsCurl));
+        $Endpoints = array('quest' => 'GET', 'points'=>'/sapi/v1/asset/assetDetail?'.$ParamsCurl.$this->signature($ParamsCurl));
         return $this->curl($Endpoints);
     }
 
@@ -829,13 +829,13 @@ class Binance{
 
     //Отправить запрос на снятие (НЕ ГОТОВО)
     // public function withdraw(){
-    //     $Endpoints = array('POST', '/wapi/v3/withdraw.html');
+    //     $Endpoints = array('POST', '/sapi/v1/capital/withdraw/apply');
     //     return  $this->curl($Endpoints);
     // }
 
     //Получить историю снятие
     // public function withdrawHistory(){
-    //     $Endpoints = array('GET', '/wapi/v3/withdrawHistory.html');
+    //     $Endpoints = array('GET', '/sapi/v1/capital/withdraw/history');
     //     return  $this->curl($Endpoints);
     // }
     //
@@ -870,7 +870,7 @@ class Binance{
         $tradeFee= $this->tradeFee($symbol);
         // Functions::show($tradeFee);
         $trade = array();
-        foreach ($tradeFee['tradeFee'] as $key => $value) {
+        foreach ($tradeFee as $key => $value) {
             $trade[$value['symbol']] = $value;
         }
         return  $trade;
